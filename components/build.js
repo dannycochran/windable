@@ -31,7 +31,7 @@ Promise.all([fetchData(), googleMap.load]).then(response => {
     }
   });
 
-  ['bounds_changed', 'center_changed', 'drag', 'resize', 'zoom_changed'].forEach(listener => {
+  ['dragend', 'resize', 'zoom_changed'].forEach(listener => {
     googleMap.map.addListener(listener, windMap.drawDebounce);
   })
 });

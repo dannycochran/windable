@@ -38,15 +38,25 @@ module.exports = function (grunt) {
           'components/build.js',
           'components/**/*.js',
           'components/build.scss',
-          'components/**/*.scss',
-          'vendor/*.css',
-          'vendor/*.js'
+          'components/**/*.scss'
         ],
         tasks: ['browserify'],
         options: {
           livereload: true,
         },
       },
+
+      vendor: {
+        files: [
+          'vendor/*.css',
+          'vendor/*.js'
+        ],
+        tasks: ['copy'],
+        options: {
+          livereload: true,
+        },
+      },
+
       html: {
         files: ['index.html'],
         tasks: ['preprocess:index'],

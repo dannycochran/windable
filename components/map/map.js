@@ -27,7 +27,7 @@ function init() {
     styles: [
       {
         featureType: 'water',
-        stylers: [{ color: '#c3cfdd'}]
+        stylers: [{ color: '#ffffff'}]
       },
       {
         featureType: 'poi',
@@ -63,9 +63,7 @@ function update() {
   const canvasWidth = googleMap.element.clientWidth;
   const canvasHeight = googleMap.element.clientHeight;
   googleMap.context.clearRect(0, 0, canvasWidth, canvasHeight);
-
-  // we like our rectangles green
-  googleMap.context.fillStyle = 'rgba(0, 255, 0, 1)';
+  googleMap.context.fillStyle = 'rgba(255, 255, 255, 0)';
   
   /* We need to scale and translate the map for current view.
    * see https://developers.google.com/maps/documentation/javascript/maptypes#MapCoordinates
