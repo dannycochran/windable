@@ -1,83 +1,69 @@
 import {googleMap} from '../map/map';
+import {fetchData} from '../data/fetchData';
 
-let map;
-let rasterLayer;
-let canvasSupport;
 let windy;
+let windResponse;
+let redrawDebounce = debounce(redraw, 100);
 
-export function onDojoLoad(
-  Map, ArcGISTiledMapServiceLayer, 
-  domUtils, esriRequest,
-  parser, number, JSON, dom, 
-  registry, RasterLayer, WebTiledLayer, esriConfig
-  ) {
-  parser.parse();
-  // does the browser support canvas? 
-  canvasSupport = supports_canvas();
-
-  // map = googleMap.map;
-  // map = new Map("mapCanvas", {
-  //   center: [-99.076, 39.132],
-  //   zoom: 3,
-  //   basemap: "dark-gray"
-  // });
-
-  googleMap.on('load', mapLoaded);
-
-  function mapLoaded() {
-
-    // Add raster layer
-    if (canvasSupport) {
-      // rasterLayer = new RasterLayer(null, {
-      //   opacity: 0.55
-      // });
-      rasterLayer = googleMap.canvasLayer;
-      map = googleMap.map;
-      // map.addLayer(rasterLayer);
-
-      // map.on("extent-change", redraw);
-      // map.on("resize", function(){});
-      // map.on("zoom-start", redraw);
-      // map.on("pan-start", redraw);
-
-      var layersRequest = esriRequest({
-        url: 'dist/data/gfs.json',
-        content: {},
-        handleAs: "json"
-      });
-      layersRequest.then(
-        function(response) {
-          windy = new Windy({ canvas: rasterLayer._element, data: response });
-          redraw();
-      }, function(error) {
-          console.log("Error: ", error.message);
-      });
-
-    } else {
-      dom.byId("mapCanvas").innerHTML = "This browser doesn't support canvas. Visit <a target='_blank' href='http://www.caniuse.com/#search=canvas'>caniuse.com</a> for supported browsers";
-    }
+export function initiateWind() {
+  if (supportsCanvas()) {
+    googleMap.load.then(mapLoaded);
+  } else {
+    $el.innerHTML = 'This rotary dial of a browser doesn not support canvas.';
   }
+}
 
-  // does the browser support canvas? 
-  function supports_canvas() {
-    return !!document.createElement("canvas").getContext;
-  }
+function mapLoaded() {
+  ['bounds_changed', 'center_changed', 'drag', 'resize', 'zoom_changed'].forEach(listener => {
+    googleMap.map.addListener(listener, redrawDebounce);
+  })
 
-  function redraw(){
+  fetchData().then(response => {
+    windResponse = response;
+    windy = new Windy({canvas: googleMap.canvas, data: windResponse});
+    redraw();
+  });
+}
 
-    // rasterLayer._element.width = 1000;
-    // rasterLayer._element.height = 1000;
-
-    windy.stop();
-// (south-west latitude, longitude),(north-east latitude, longitude)
-    var extent = map.getBounds();
-    setTimeout(function(){
-      windy.start(
-        [[0,0],[1000, 1000]],
-        1000,
-        1000,
-        [[extent.R.R, extent.R.j],[extent.j.R, extent.j.j]]
-      );
-    },500);
-  }
+function debounce(func, wait, immediate) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    const later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    const callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) func.apply(context, args);
+  };
 };
+
+// does the browser support canvas? 
+function supportsCanvas() {
+  return !!document.createElement('canvas').getContext;
+}
+
+function redraw(){
+  googleMap.canvas.width = googleMap.element.clientWidth;
+  googleMap.canvas.height = googleMap.element.clientHeight;
+
+  windy.stop();
+
+  const bounds = googleMap.map.getBounds();
+  const modified = {
+    xmin: bounds.j.j,
+    ymin: bounds.R.R,
+    xmax: bounds.j.R,
+    ymax: bounds.R.j
+  };
+
+  windy.start(
+    [[0,0],[googleMap.element.clientWidth, googleMap.element.clientHeight]],
+    googleMap.element.clientWidth,
+    googleMap.element.clientHeight,
+    [[modified.xmin, modified.ymin],[modified.xmax, modified.ymax]]
+  );
+}

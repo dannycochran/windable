@@ -51,15 +51,18 @@ module.exports = function (grunt) {
     watch: {
       js: {
         files: ['components/**/*.js', 'components/build.js', 'vendor/*.js'],
-        tasks: ['browserify']
+        tasks: ['browserify'],
+        options: {
+          livereload: true,
+        },
       },
       css: {
         files: ['components/**/*.scss', 'vendor/*.css'],
-        tasks: ['sass']
+        tasks: ['sass'],
       },
       html: {
         files: ['index.html'],
-        tasks: ['preprocess:index']
+        tasks: ['preprocess:index'],
       }
     },
 

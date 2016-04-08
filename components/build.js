@@ -1,4 +1,5 @@
-import {onDojoLoad} from './wind/wind';
+import {initiateWind} from './wind/wind';
+import {onDojoLoad} from './wind/esri-wind';
 
 window.dojoRequire([
   'esri/map', 'esri/layers/ArcGISTiledMapServiceLayer', 
@@ -8,3 +9,5 @@ window.dojoRequire([
   'esri/config',
   'dojo/domReady!'
 ], onDojoLoad);
+
+initiateWind();
