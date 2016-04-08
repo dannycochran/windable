@@ -162,6 +162,7 @@ var Windy = function( params ){
       // Scale distortion vectors by u and v, then add.
       wind[0] = d[0] * u + d[2] * v;
       wind[1] = d[1] * u + d[3] * v;
+
       return wind;
   };
 
@@ -288,7 +289,6 @@ var Windy = function( params ){
                         if (wind) {
                             wind = distort(projection, λ, φ, x, y, velocityScale, wind, extent);
                             column[y+1] = column[y] = wind;
-
                         }
                     }
                 }
@@ -313,21 +313,12 @@ var Windy = function( params ){
 
   var animate = function(bounds, field) {
 
-    function asColorStyle(r, g, b, a) {
-        return "rgba(" + 243 + ", " + 243 + ", " + 238 + ", " + a + ")";
-    }
-
-    function hexToR(h) {return parseInt((cutHex(h)).substring(0,2),16)}
-    function hexToG(h) {return parseInt((cutHex(h)).substring(2,4),16)}
-    function hexToB(h) {return parseInt((cutHex(h)).substring(4,6),16)}
-    function cutHex(h) {return (h.charAt(0)=="#") ? h.substring(1,7):h}
-
     function windIntensityColorScale(step, maxWind) {
-        result = params.colors || ["#41b6c4","#1d91c0","#225ea8","#253494","#081d58"];
-        result.indexFor = function(m) {  // map wind speed to a style
-            return Math.floor(Math.min(m, maxWind) / maxWind * (result.length - 1));
-        };
-        return result;
+      result = params.colors || ["#41b6c4","#1d91c0","#225ea8","#253494","#081d58"];
+      result.indexFor = function(m) {  // map wind speed to a style
+          return Math.floor(Math.min(m, maxWind) / maxWind * (result.length - 1));
+      };
+      return result;
     }
 
     var colorStyles = windIntensityColorScale(INTENSITY_SCALE_STEP, MAX_WIND_INTENSITY);
@@ -387,7 +378,6 @@ var Windy = function( params ){
         g.globalCompositeOperation = "destination-in";
         g.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
         g.globalCompositeOperation = prev;
-
         // Draw new particle trails.
         buckets.forEach(function(bucket, i) {
             if (bucket.length > 0) {
