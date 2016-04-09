@@ -36,13 +36,12 @@ function init() {
     ]
   };
 
-  googleMap.element = document.getElementById('googleMapCanvas');
+  googleMap.element = document.getElementById('google-map-canvas');
   googleMap.map = new google.maps.Map(googleMap.element, mapOptions);
 
   // initialize the canvasLayer
   const canvasLayerOptions = {
     map: googleMap.map,
-    resizeHandler: resize,
     animate: false,
     updateHandler: () => {
       resolve();
@@ -55,7 +54,7 @@ function init() {
 }
 
 function resize() {
-  // nothing to do here
+  update();
 }
 
 function update() {

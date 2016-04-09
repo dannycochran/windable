@@ -1,22 +1,39 @@
 import {WindMap} from './wind/wind';
 import {googleMap} from './map/map';
-import {fetchData} from './data/fetchData';
-import {onDojoLoad} from './wind/esri-wind';
+import {AltitudeModel} from './altitude/altitude_model';
+import {palettes} from './utilities/palettes';
+import {debounce} from './utilities/functions';
 
 require('./build.scss');
 
-// window.dojoRequire([
-//   'esri/map', 'esri/layers/ArcGISTiledMapServiceLayer', 
-//   'esri/domUtils', 'esri/request',
-//   'dojo/parser', 'dojo/number', 'dojo/json', 'dojo/dom', 
-//   'dijit/registry', 'plugins/RasterLayer','esri/layers/WebTiledLayer',
-//   'esri/config',
-//   'dojo/domReady!'
-// ], onDojoLoad);
+// Export a singleton altitude model.
+export const altitudeModel = new AltitudeModel();
+
+// Our available data is hard coded to Friday April 1, 00:00:00.
+const windDate = new Date('Fri Apr 9 2016 00:00:00 GMT-0700 (PDT)');
+
+// Populate the select menu with millibar levels.
+const menu = document.getElementById('millibar-levels');
+altitudeModel.levels.forEach(level => {
+  const select = document.createElement('option')
+  select.innerHTML = level;
+  menu.appendChild(select);
+});
+
+// Populate the colors menu.
+const colorsMenu = document.getElementById('color-schemes');
+const colors = Object.keys(palettes);
+colors.forEach(palette => {
+  const select = document.createElement('option');
+  select.innerHTML = palette;
+  colorsMenu.appendChild(select);
+});
+
+colorsMenu.selectedIndex = colors.indexOf('default');
+menu.selectedIndex = altitudeModel.levels.indexOf(altitudeModel.millibars);
 
 // Wait for the data to load and the map to be in the DOM.
-
-Promise.all([fetchData(), googleMap.load]).then(response => {
+Promise.all([altitudeModel.get({time: windDate}), googleMap.load]).then(response => {
   const windMap = new WindMap({
     canvas: googleMap.canvas,
     data: response[0],
@@ -33,12 +50,25 @@ Promise.all([fetchData(), googleMap.load]).then(response => {
     }
   });
 
-  googleMap.map.addListener('dragstart', windMap.windy.stop);
-  window.addEventListener('resize', () => {
-    googleMap.update();
-    windMap.drawDebounce();
-  });
-  ['dragend', 'resize', 'zoom_changed'].forEach(listener => {
-    googleMap.map.addListener(listener, windMap.drawDebounce);
+  const onSelectAltitude = function(e) {
+    const selectedIndex = menu.selectedIndex;
+    menu.disabled = true;
+    altitudeModel.get({
+      time: windDate,
+      millibars: altitudeModel.levels[selectedIndex]
+    }).then((data) => {
+      windMap.update({data: data});
+      menu.disabled = false;
+    });
+  };
+  const onSelectColor = function(e) {
+    const selectedIndex = colorsMenu.selectedIndex;
+    windMap.update({colorScheme: palettes[colors[selectedIndex]]});
+  };
+  menu.addEventListener('change', onSelectAltitude);
+  colorsMenu.addEventListener('change', onSelectColor);
+
+  ['bounds_changed', 'resize'].forEach(listener => {
+    googleMap.map.addListener(listener, windMap.start.bind(windMap));
   });
 });

@@ -20,7 +20,7 @@ var Windy = function( params ){
   var PARTICLE_REDUCTION = 0.75;            // reduce particle count to this much of normal for mobile devices
   var FRAME_RATE = 20;                      // desired milliseconds per frame
   var BOUNDARY = 0.45;
-
+  var PARTICLE_FADE_OPACITY = 0.89;
   var NULL_WIND_VECTOR = [NaN, NaN, null];  // singleton for no wind in the form: [u, v, magnitude]
   var TRANSPARENT_BLACK = [255, 0, 0, 0];
 
@@ -310,11 +310,10 @@ var Windy = function( params ){
     })();
   };
 
-
   var animate = function(bounds, field) {
 
     function windIntensityColorScale(step, maxWind) {
-      result = params.colors || ["#41b6c4","#1d91c0","#225ea8","#253494","#081d58"];
+      result = params.colorScheme || ['#41b6c4','#1d91c0','#225ea8','#253494'];
       result.indexFor = function(m) {  // map wind speed to a style
           return Math.floor(Math.min(m, maxWind) / maxWind * (result.length - 1));
       };
@@ -329,7 +328,7 @@ var Windy = function( params ){
       particleCount *= PARTICLE_REDUCTION;
     }
 
-    var fadeFillStyle = "rgba(0, 0, 0, 0.97)";
+    var fadeFillStyle = "rgba(0, 0, 0, " + String(PARTICLE_FADE_OPACITY) + ")";
 
     var particles = [];
     for (var i = 0; i < particleCount; i++) {
@@ -438,11 +437,21 @@ var Windy = function( params ){
     if (windy.timer) clearTimeout(windy.timer)
   };
 
+  var update = function(newParams) {
+    newParams = newParams || {};
+    params.data = newParams.data || params.data;
+    params.colorScheme = newParams.colorScheme || params.colorScheme;
+  };
+
+  var colors = function(colors) {
+    params.colors = colors;
+  };
 
   var windy = {
     params: params,
     start: start,
-    stop: stop
+    stop: stop,
+    update: update
   };
 
   return windy;

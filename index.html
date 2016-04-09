@@ -35,9 +35,15 @@
   </head>
   
   <body>
-    <div class="map" id="googleMapCanvas"></div>
-    <div class="map" id="mapCanvas"></div>
-
+    <div class="map" id="google-map-canvas"></div>
+    <div id="altitude-menu">
+      <label>Select Altitude (millibars)</label>
+      <select id="millibar-levels"></select>
+    </div>
+    <div id="colors-menu">
+      <label>Select Color Scheme</label>
+      <select id="color-schemes"></select>
+    </div>
     <script>
       var dojoConfig = { 
         paths: {

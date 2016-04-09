@@ -10,29 +10,50 @@ export class WindMap {
     this.element = config.element;
     this.getExtent = config.getExtent;
 
-    this.drawDebounce = debounce(this.draw.bind(this), 100);
-    this.windy = new Windy({canvas: config.canvas, data: config.data});
+    this.startDebounce_ = debounce(this.draw_.bind(this));
+    this.windy_ = new Windy({
+      canvas: config.canvas,
+      data: config.data
+    });
 
     if (!supportsCanvas()) {
       this.element.innerHTML = 'This rotary dial of a browser does not support canvas.';
     } else {
-      this.draw()
+      this.start();
     }
   }
 
-  draw() {
+  stop() {
+    this.windy_.stop();
+  }
+
+  start() {
+    this.stop();
+    this.startDebounce_();
+  }
+
+  update(data) {
+    this.stop();
+    this.windy_.update(data);
+    this.startDebounce_();
+  }
+
+  draw_() {
     this.canvas.width = this.element.clientWidth;
     this.canvas.height = this.element.clientHeight;
-
-    this.windy.stop();
+    this.canvas.style.width = this.element.clientWidth + 'px';
+    this.canvas.style.height = this.element.clientHeight + 'px';
+    this.stop();
 
     const extent = this.getExtent();
 
-    this.windy.start(
-      [[0,0],[this.element.clientWidth, this.element.clientHeight]],
-      this.element.clientWidth,
-      this.element.clientHeight,
-      [[extent.xmin, extent.ymin],[extent.xmax, extent.ymax]]
-    );
+    setTimeout(function() {
+      this.windy_.start(
+        [[0,0],[this.element.clientWidth, this.element.clientHeight]],
+        this.element.clientWidth,
+        this.element.clientHeight,
+        [[extent.xmin, extent.ymin],[extent.xmax, extent.ymax]]
+      );
+    }.bind(this), 100);
   }
 }
