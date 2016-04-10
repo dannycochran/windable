@@ -1,16 +1,6 @@
-/*  Global class for simulating the movement of particle through a 1km wind grid
+import {getAnimationFrame} from '../utilities/functions';
 
-    credit: All the credit for this work goes to: https://github.com/cambecc for creating the repo:
-      https://github.com/cambecc/earth. The majority of this code is directly take nfrom there, since its awesome.
-
-    This class takes a canvas element and an array of data (1km GFS from http://www.emc.ncep.noaa.gov/index.php?branch=GFS)
-    and then uses a mercator (forward/reverse) projection to correctly map wind vectors in "map space".
-
-    The "start" method takes the bounds of the map at its current extent and starts the whole gridding,
-    interpolation and animation process.
-*/
-
-var Windy = function( params ){
+export const Windy = function( params ){
   var VELOCITY_SCALE = 1/70000;             // scale for wind velocity (completely arbitrary--this value looks nice)
   var INTENSITY_SCALE_STEP = 10;            // step size of particle intensity color scale
   var MAX_WIND_INTENSITY = 40;              // wind velocity at which particle intensity is maximum (m/s)
@@ -313,7 +303,7 @@ var Windy = function( params ){
   var animate = function(bounds, field) {
 
     function windIntensityColorScale(step, maxWind) {
-      result = params.colorScheme || ['#41b6c4','#1d91c0','#225ea8','#253494'];
+      let result = params.colorScheme || ['#41b6c4','#1d91c0','#225ea8','#253494'];
       result.indexFor = function(m) {  // map wind speed to a style
           return Math.floor(Math.min(m, maxWind) / maxWind * (result.length - 1));
       };
@@ -394,16 +384,16 @@ var Windy = function( params ){
     }
 
     (function frame() {
-        try {
-            windy.timer = setTimeout(function() {
-              requestAnimationFrame(frame);
-              evolve();
-              draw();
-            }, 1000 / FRAME_RATE);
-        }
-        catch (e) {
-            console.error(e);
-        }
+      try {
+        windy.timer = setTimeout(() => {
+          getAnimationFrame(frame);
+          evolve();
+          draw();
+        }, 1000 / FRAME_RATE);
+      }
+      catch (e) {
+        console.error(e);
+      }
     })();
   }
 
@@ -456,18 +446,3 @@ var Windy = function( params ){
 
   return windy;
 }
-
-
-
-// shim layer with setTimeout fallback
-window.requestAnimationFrame = (function(){
-  return  window.requestAnimationFrame       ||
-          window.webkitRequestAnimationFrame ||
-          window.mozRequestAnimationFrame    ||
-          window.oRequestAnimationFrame ||
-          window.msRequestAnimationFrame ||
-          function( callback ){
-            window.setTimeout(callback, 1000 / 20);
-          };
-})();
-

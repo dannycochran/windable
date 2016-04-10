@@ -24,12 +24,14 @@ export function debounce(func, wait=100, immediate=false) {
   };
 };
 
+
 /**
  * Checks if the browser supports canvas.
  */
 export function supportsCanvas() {
   return !!document.createElement('canvas').getContext;
 }
+
 
 /**
  * Formats a milliseconds timestamp to YYYYMMDDHH.
@@ -50,3 +52,15 @@ export function formatTime(date) {
 
   return `${date.getFullYear()}${month}${day}${hours}`;
 }
+
+/**
+ * Browser shim for getting the requestAnimationFrame function.
+ */
+export const getAnimationFrame = (function (){
+  return window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    window.mozRequestAnimationFrame ||
+    window.oRequestAnimationFrame ||
+    window.msRequestAnimationFrame ||
+    function(callback) { window.setTimeout(callback, 1000 / 20); };
+})();

@@ -4,34 +4,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
     <title>Wind Animation</title>
-
-    <link rel="stylesheet" href="dist/vendor/esri.css">
-
-    <style>
-      html,body {
-        width:100%;
-        height:100%;
-        margin: 0;
-        padding: 0px 0 0 0;
-      }
-
-      #mapCanvas {
-        padding:0;
-      }
-
-      #credit {
-        position: absolute;
-        bottom: 10px;
-        left: 10px;
-        color: #fff;
-        font-size: 14px;
-      }
-
-      #credit a {
-        color: #08c;
-      }
-
-    </style>
   </head>
   
   <body>
@@ -44,20 +16,8 @@
       <label>Select Color Scheme</label>
       <select id="color-schemes"></select>
     </div>
-    <script>
-      var dojoConfig = { 
-        paths: {
-          plugins: location.pathname.replace(/\/[^/]+$/, "") + "dist/vendor"
-        }
-      };
-    </script>
     <script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
     <script src="dist/vendor/CanvasLayer.js"></script>
-    <script src="dist/vendor/windy.js"></script>
-    <script src="//js.arcgis.com/3.12/"></script>
-    <script type="text/javascript">
-      window.dojoRequire = require;
-    </script>
     <script src="dist/windable.js"></script>
   </body>
 

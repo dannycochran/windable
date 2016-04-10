@@ -1,13 +1,13 @@
-import {WindMap} from './wind/wind';
-import {googleMap} from './map/map';
-import {AltitudeModel} from './altitude/altitude_model';
-import {palettes} from './utilities/palettes';
+import {AltitudeModel} from './altitude/altitude';
 import {debounce} from './utilities/functions';
+import {googleMap} from './map/map';
+import {palettes} from './utilities/palettes';
+import {WindMap} from './wind/wind';
 
 require('./build.scss');
 
-// Export a singleton altitude model.
-export const altitudeModel = new AltitudeModel();
+// Create an altitude model.
+const altitudeModel = new AltitudeModel();
 
 // Our available data is hard coded to Friday April 1, 00:00:00.
 const windDate = new Date('Fri Apr 9 2016 00:00:00 GMT-0700 (PDT)');
@@ -46,6 +46,8 @@ Promise.all([altitudeModel.get({time: windDate}), googleMap.load]).then(response
         xmax: bounds.j.R,
         ymax: bounds.R.j
       };
+      console.log(extent);
+      console.log('x', extent.xmin + extent.xmax);
       return extent;
     }
   });

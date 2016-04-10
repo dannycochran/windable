@@ -2,6 +2,7 @@ import {
   debounce,
   supportsCanvas
 } from '../utilities/functions';
+import {Windy} from './windy';
 
 export class WindMap {
   constructor(config) {
@@ -47,13 +48,11 @@ export class WindMap {
 
     const extent = this.getExtent();
 
-    setTimeout(function() {
-      this.windy_.start(
-        [[0,0],[this.element.clientWidth, this.element.clientHeight]],
-        this.element.clientWidth,
-        this.element.clientHeight,
-        [[extent.xmin, extent.ymin],[extent.xmax, extent.ymax]]
-      );
-    }.bind(this), 100);
+    this.windy_.start(
+      [[0,0],[this.element.clientWidth, this.element.clientHeight]],
+      this.element.clientWidth,
+      this.element.clientHeight,
+      [[extent.xmin, extent.ymin],[extent.xmax, extent.ymax]]
+    );
   }
 }
