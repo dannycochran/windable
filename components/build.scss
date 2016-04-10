@@ -7,7 +7,7 @@ html, body {
   padding: 0 0 0 0;
 }
 
-#altitude-menu, #colors-menu {
+#altitude-menu, #colors-menu, #particles-menu, #speed-menu {
   position: absolute;
   width: 200px;
   top: 10px;
@@ -21,9 +21,21 @@ html, body {
   select {
     width: 100%;
   }
+  input {
+    width: 100%;
+  }
 }
+
 #colors-menu {
   top: 90px;
+}
+
+#particles-menu {
+  top: 170px;
+}
+
+#speed-menu {
+  top: 250px;
 }
 
 .parent.perspective {

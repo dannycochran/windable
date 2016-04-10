@@ -23,9 +23,6 @@ module.exports = function (grunt) {
         src: '**',
         dest: 'dist/vendor'
       },
-    },
-
-    preprocess: {
       index: {
         src: 'index.html',
         dest: 'dist/index.html'
@@ -46,20 +43,16 @@ module.exports = function (grunt) {
         },
       },
 
-      vendor: {
+      others: {
         files: [
           'vendor/*.css',
-          'vendor/*.js'
+          'vendor/*.js',
+          'index.html'
         ],
         tasks: ['copy'],
         options: {
           livereload: true,
         },
-      },
-
-      html: {
-        files: ['index.html'],
-        tasks: ['preprocess:index'],
       }
     },
 
@@ -87,10 +80,9 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-concurrent');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-nodemon');
-  grunt.loadNpmTasks('grunt-preprocess');
   grunt.loadNpmTasks('grunt-contrib-copy');
 
-  const build = ['browserify', 'preprocess:index', 'copy'];
+  const build = ['browserify', 'copy'];
 
   grunt.registerTask('app', build.concat(['concurrent:app']));
   grunt.registerTask('build', build);

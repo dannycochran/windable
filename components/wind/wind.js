@@ -1,58 +1,78 @@
+/**
+ * A light controller class for using a modified version of Esri's Windy.JS.
+ */
+
 import {
   debounce,
   supportsCanvas
 } from '../utilities/functions';
 import {Windy} from './windy';
 
-export class WindMap {
-  constructor(config) {
-    this.canvas = config.canvas;
-    this.data = config.data;
-    this.element = config.element;
-    this.getExtent = config.getExtent;
+/**
+ * ConfigPayload can be passed at construction and on update.
+ *
+ * @typedef {{
+ *   canvas: (!HTMLCanvasElement) The canvas to which wind will be rendered.
+ *   element: (!HTMLElement|Object) A parent element of the canvas.
+ *   extent: (Function():!Array<Array<number, number>>) [[west, south], [east, north]]
+ *   data: (!Object) Wind data from NOAA (see examples in data/)
+ * }}
+ */
+let ConfigPayload;
 
-    this.startDebounce_ = debounce(this.draw_.bind(this));
-    this.windy_ = new Windy({
+export class WindMap {
+  /**
+   * A constructor for the WindMap.
+   * @param {!ConfigPayload} config An instance of ConfigPayload.
+   */
+  constructor(config) {
+    if (!supportsCanvas()) {
+      throw new Error(`Browser does not support canvas.`);
+    }
+
+    // Required configuration fields.
+    this.config_ = {
       canvas: config.canvas,
-      data: config.data
+      extent: config.extent,
+      element: config.element,
+      data: config.data || {},
+    };
+
+    this.windy_ = new Windy({canvas: config.canvas});
+    this.updateWindy_ = debounce(() => {
+      this.windy_.update(this.config_);
     });
 
-    if (!supportsCanvas()) {
-      this.element.innerHTML = 'This rotary dial of a browser does not support canvas.';
-    } else {
-      this.start();
-    }
+    this.update(config);
   }
 
   stop() {
     this.windy_.stop();
+    return this;
   }
 
-  start() {
-    this.stop();
-    this.startDebounce_();
-  }
-
-  update(data) {
-    this.stop();
-    this.windy_.update(data);
-    this.startDebounce_();
-  }
-
-  draw_() {
-    this.canvas.width = this.element.clientWidth;
-    this.canvas.height = this.element.clientHeight;
-    this.canvas.style.width = this.element.clientWidth + 'px';
-    this.canvas.style.height = this.element.clientHeight + 'px';
+  /**
+   * Update the WindMap data and its optional configurations.
+   * @param {!Object} config Extends the existing ConfigPayload for this class.
+   * @return {!WindMap} The windmap instance.
+   */
+  update(config={}) {
     this.stop();
 
-    const extent = this.getExtent();
+    // Optional configuration fields. These all have default values in Windy.
+    Object.assign(this.config_, {
+      colorScheme: config.colorScheme,
+      bounds: config.bounds,
+      velocityScale: config.velocityScale,
+      particleWidth: config.particleWidth,
+      particleFadeOpacity: config.particleFadeOpacity,
+      particleReduction: config.particleReduction
+    });
 
-    this.windy_.start(
-      [[0,0],[this.element.clientWidth, this.element.clientHeight]],
-      this.element.clientWidth,
-      this.element.clientHeight,
-      [[extent.xmin, extent.ymin],[extent.xmax, extent.ymax]]
-    );
+    // Update the data if it exists.
+    if (config.data) this.config_.data = config.data;
+
+    this.updateWindy_();
+    return this;
   }
 }

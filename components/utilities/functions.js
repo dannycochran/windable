@@ -53,6 +53,7 @@ export function formatTime(date) {
   return `${date.getFullYear()}${month}${day}${hours}`;
 }
 
+
 /**
  * Browser shim for getting the requestAnimationFrame function.
  */
@@ -64,3 +65,12 @@ export const getAnimationFrame = (function (){
     window.msRequestAnimationFrame ||
     function(callback) { window.setTimeout(callback, 1000 / 20); };
 })();
+
+
+/**
+ * @param {*} val Any value.
+ * @returns {boolean} Whether val is neither null nor undefined.
+ */
+export const isValue = function(val) {
+  return val !== null && val !== undefined;
+};
