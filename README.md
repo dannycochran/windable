@@ -14,6 +14,7 @@ The source code is annotated (but not compiled) with ClosureJS style comments.
 
 `
 npm install
+
 grunt app
 `
 
