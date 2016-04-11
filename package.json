@@ -4,10 +4,12 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "deploy": "grunt rebuild; gcloud preview app deploy app.yaml",
     "start": "node server.js"
   },
   "dependencies": {
     "express": "3.21.2",
+    "gcloud": "^0.30.2",
     "grunt": "0.4.2"
   },
   "devDependencies": {

@@ -85,5 +85,5 @@ module.exports = function (grunt) {
   const build = ['browserify', 'copy'];
 
   grunt.registerTask('app', build.concat(['concurrent:app']));
-  grunt.registerTask('build', build);
+  grunt.registerTask('rebuild', build);
 };
