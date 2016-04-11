@@ -1,6 +1,5 @@
 /node_modules/
 /.sass-cache/
-/dist/
 .DS_STORE
 /.nodemonignore
 /.grunt/

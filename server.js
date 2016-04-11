@@ -2,16 +2,11 @@
 
 const express = require('express');
 const app = express();
-const port = 8080;
-
 const sendIndex = (req, res) => { res.status(200).sendfile('dist/index.html'); };
-const cacher = (req, res, next) => {
-  res.setHeader('Cache-Control', `public, max-age=${CACHE_TIME}`);
-  next();
-};
+
+app.set('port', (process.env.PORT || 5000));
 
 // Serve static assets.
-app.use(cacher);
 app.use('/dist', express.static('dist'));
 app.use(express.compress());
 app.use(express.urlencoded());
@@ -30,9 +25,8 @@ app.get('/wind', (req, res) => {
 });
 
 app.get('/', sendIndex);
-app.get('/*', sendIndex);
 
 // Start the server
-const server = app.listen(port, () => {
-  console.log('App listening at http://%s:%s', server.address().address, port);
+const server = app.listen(app.get('port'), () => {
+  console.log('App listening at http://%s:%s', server.address().address, app.get('port'));
 });
