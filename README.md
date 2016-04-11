@@ -12,10 +12,9 @@ The source code is annotated (but not compiled) with ClosureJS style comments.
 
 # Running
 
-`
+```
 npm install
-
 grunt app
-`
+```
 
 Will set up a server at localhost:8080.
