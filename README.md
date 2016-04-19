@@ -10,6 +10,10 @@ Windable borrows heavily from the work of wind-js and earth.nullschool.
 
 The source code is annotated (but not compiled) with ClosureJS style comments.
 
+# Demo
+
+https://damp-reaches-87397.herokuapp.com/
+
 # Running
 
 ```
