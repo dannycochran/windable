@@ -10,17 +10,20 @@ export const googleMap = {
 };
 
 /**
- * Returns extent of the map: [[west (xmin), south (ymin)],
- *                             [east (xmax), north(ymax)]].  
- * @return {!Array<!Array<number,number>>} Bounds of the map.
+ * Returns extent of the map.
+ * @return {!MapDimensions} Bounds of the map.
  */
 function extent() {
   const bounds = googleMap.map.getBounds();
 
-  return [
-    [bounds.j.j, bounds.R.R],
-    [bounds.j.R, bounds.R.j]
-  ];
+  return {
+    width: googleMap.element.clientWidth,
+    height: googleMap.element.clientHeight,
+    latlng:[
+      [bounds.j.j, bounds.R.R],
+      [bounds.j.R, bounds.R.j]
+    ]
+  };
 }
 
 function init() {

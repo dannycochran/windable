@@ -4,30 +4,33 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
     <title>Wind Animation</title>
+
+    <script src="https://maps.googleapis.com/maps/api/js" defer></script>
+    <script src="dist/vendor/CanvasLayer.js" defer></script>
+    <script src="dist/windable.js" defer></script>
   </head>
   
   <body>
     <div class="map" id="google-map-canvas"></div>
+
     <div id="altitude-menu">
       <label>Select Altitude (millibars)</label>
       <select id="millibar-levels"></select>
     </div>
+
     <div id="colors-menu">
       <label>Select Color Scheme</label>
       <select id="color-schemes"></select>
     </div>
+
     <div id="particles-menu">
       <label>Particle Reduction</label>
       <input id="particles-range" type="range" value="75" step="1">
     </div>
+
     <div id="speed-menu">
       <label>Particle Speed</label>
       <input id="speed-range" type="range" step="1" max="1000" value="50">
     </div>
-
-    <script src="https://maps.googleapis.com/maps/api/js"></script>
-    <script src="dist/vendor/CanvasLayer.js"></script>
-    <script src="dist/windable.js"></script>
   </body>
-
 </html>

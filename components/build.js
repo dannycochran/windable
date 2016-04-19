@@ -39,7 +39,6 @@ menu.selectedIndex = altitudeModel.levels.indexOf(altitudeModel.millibars);
 Promise.all([altitudeModel.get({time: windDate}), googleMap.load]).then(response => {
   const windMap = new WindMap({
     canvas: googleMap.canvas,
-    element: googleMap.element,
     data: response[0],
     extent: googleMap.extent
   });

@@ -179,7 +179,6 @@ menu.selectedIndex = altitudeModel.levels.indexOf(altitudeModel.millibars);
 Promise.all([altitudeModel.get({ time: windDate }), _map.googleMap.load]).then(function (response) {
   var windMap = new _wind.WindMap({
     canvas: _map.googleMap.canvas,
-    element: _map.googleMap.element,
     data: response[0],
     extent: _map.googleMap.extent
   });
@@ -244,14 +243,17 @@ var googleMap = exports.googleMap = {
 };
 
 /**
- * Returns extent of the map: [[west (xmin), south (ymin)],
- *                             [east (xmax), north(ymax)]].  
- * @return {!Array<!Array<number,number>>} Bounds of the map.
+ * Returns extent of the map.
+ * @return {!MapDimensions} Bounds of the map.
  */
 function extent() {
   var bounds = googleMap.map.getBounds();
 
-  return [[bounds.j.j, bounds.R.R], [bounds.j.R, bounds.R.j]];
+  return {
+    width: googleMap.element.clientWidth,
+    height: googleMap.element.clientHeight,
+    latlng: [[bounds.j.j, bounds.R.R], [bounds.j.R, bounds.R.j]]
+  };
 }
 
 function init() {
@@ -542,21 +544,11 @@ var _windy = require('./windy');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-/**
- * ConfigPayload can be passed at construction and on update.
- *
- * @typedef {{
- *   canvas: (!HTMLCanvasElement) The canvas to which wind will be rendered.
- *   element: (!HTMLElement|Object) A parent element of the canvas.
- *   extent: (Function():!Array<Array<number, number>>) [[west, south], [east, north]]
- *   data: (!Object) Wind data from NOAA (see examples in data/)
- * }}
- */
-var ConfigPayload = void 0;
-
 var WindMap = exports.WindMap = function () {
   /**
-   * A constructor for the WindMap.
+   * A constructor for the WindMap. See typedefs.js for a description of
+   * ConfigPayload.
+   *
    * @param {!ConfigPayload} config An instance of ConfigPayload.
    */
 
@@ -573,7 +565,6 @@ var WindMap = exports.WindMap = function () {
     this.config_ = {
       canvas: config.canvas,
       extent: config.extent,
-      element: config.element,
       data: config.data || {}
     };
 
@@ -615,8 +606,8 @@ var WindMap = exports.WindMap = function () {
         particleReduction: config.particleReduction
       });
 
-      // Update the data if it exists.
-      if (config.data) this.config_.data = config.data;
+      // Update the wind data if it exists.
+      this.config_.data = config.data || this.config_.data;
 
       this.updateWindy_();
       return this;
@@ -685,6 +676,11 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     };
   };
 
+  /**
+   * Creates a wind builder.
+   * @param {!WindData} An instance of WindData.
+   * @return {!Object} A wind builder object.
+   */
   var createBuilder = function createBuilder(windData) {
     var uComp = null;
     var vComp = null;
@@ -704,43 +700,52 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   var buildGrid = function buildGrid(windData) {
     var builder = createBuilder(windData);
 
-    var header = builder.header;
-    var λ0 = header.lo1,
-        φ0 = header.la1; // the grid's origin (e.g., 0.0E, 90.0N)
-    var Δλ = header.dx,
-        Δφ = header.dy; // distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat)
-    var ni = header.nx,
-        nj = header.ny; // number of grid points W-E and N-S (e.g., 144 x 73)
-    var date = new Date(header.refTime);
-    date.setHours(date.getHours() + header.forecastTime);
+    // The grid's origin (e.g., 0.0E, 90.0N)
+    var λ0 = builder.header.lo1;
+    var φ0 = builder.header.la1;
 
-    // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases from φ0.
+    // Distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat).
+    var Δλ = builder.header.dx;
+    var Δφ = builder.header.dy;
+
+    // Number of grid points W-E and N-S (e.g., 144 x 73).
+    var ni = builder.header.nx;
+    var nj = builder.header.ny;
+
+    // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases
+    // from φ0:
     // http://www.nco.ncep.noaa.gov/pmb/docs/grib2/grib2_table3-4.shtml
-    var grid = [],
-        p = 0;
+    var grid = [];
     var isContinuous = Math.floor(ni * Δλ) >= 360;
+    var p = 0;
+
     for (var j = 0; j < nj; j++) {
       var row = [];
       for (var i = 0; i < ni; i++, p++) {
         row[i] = builder.data(p);
       }
+
+      // For wrapped grids, duplicate first column as last column to simplify
+      // interpolation logic.
       if (isContinuous) {
-        // For wrapped grids, duplicate first column as last column to simplify interpolation logic
         row.push(row[0]);
       }
+
       grid[j] = row;
     }
 
-    function interpolate(λ, φ) {
-      var i = _math.math.floorMod(λ - λ0, 360) / Δλ; // calculate longitude index in wrapped range [0, 360)
-      var j = (φ0 - φ) / Δφ; // calculate latitude index in direction +90 to -90
+    return function (λ, φ) {
+      // Calculate longitude index in wrapped range [0, 360).
+      var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
 
+      // Calculate latitude index in direction +90 to -90.
+      var j = (φ0 - φ) / Δφ;
       var fi = Math.floor(i),
           ci = fi + 1;
       var fj = Math.floor(j),
           cj = fj + 1;
 
-      var row;
+      var row = void 0;
       if (row = grid[fj]) {
         var g00 = row[fi];
         var g10 = row[ci];
@@ -754,10 +759,6 @@ var Windy = exports.Windy = function Windy(windyConfig) {
         }
       }
       return null;
-    }
-    return {
-      date: date,
-      interpolate: interpolate
     };
   };
 
@@ -837,7 +838,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
           var φ = coord[1];
 
           if (isFinite(λ)) {
-            var wind = grid.interpolate(λ, φ);
+            var wind = grid(λ, φ);
 
             if (wind) {
               wind = distort(λ, φ, x, y, velocity, wind, extent);
@@ -968,12 +969,13 @@ var Windy = exports.Windy = function Windy(windyConfig) {
 
   /**
    * Updates the wind animation with new configurations.
+   * @param {!ConfigPayload} A ConfigPayload instance. 
    */
   var update = function update(config) {
     var extent = config.extent();
-    var width = config.width || config.element.clientWidth;
-    var height = config.height || config.element.clientHeight;
-    var bounds = config.bounds || [[0, 0], [width, height]];
+    var width = extent.width;
+    var height = extent.height;
+    var bounds = extent.cropBounds || [[0, 0], [width, height]];
 
     config.canvas.width = width;
     config.canvas.height = height;
@@ -981,10 +983,10 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     config.canvas.style.height = height + 'px';
 
     var mapBounds = {
-      south: _math.math.deg2rad(extent[0][1]),
-      north: _math.math.deg2rad(extent[1][1]),
-      east: _math.math.deg2rad(extent[1][0]),
-      west: _math.math.deg2rad(extent[0][0]),
+      south: _math.math.deg2rad(extent.latlng[0][1]),
+      north: _math.math.deg2rad(extent.latlng[1][1]),
+      east: _math.math.deg2rad(extent.latlng[1][0]),
+      west: _math.math.deg2rad(extent.latlng[0][0]),
       width: width,
       height: height
     };

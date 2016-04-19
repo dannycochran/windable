@@ -43,9 +43,14 @@ export const Windy = function(windyConfig) {
       data: (i) => [uComp.data[i], vComp.data[i]],
       header: uComp.header,
       interpolate: math.bilinearInterpolateVector
-    }
+    };
   };
 
+  /**
+   * Creates a wind builder.
+   * @param {!WindData} An instance of WindData.
+   * @return {!Object} A wind builder object.
+   */
   const createBuilder = function(windData) {
     let uComp = null;
     let vComp = null;
@@ -60,58 +65,67 @@ export const Windy = function(windyConfig) {
     return createWindBuilder(uComp, vComp);
   };
 
-  var buildGrid = function(windData) {
-      var builder = createBuilder(windData);
+  const buildGrid = function(windData) {
+    const builder = createBuilder(windData);
 
-      var header = builder.header;
-      var λ0 = header.lo1, φ0 = header.la1;  // the grid's origin (e.g., 0.0E, 90.0N)
-      var Δλ = header.dx, Δφ = header.dy;    // distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat)
-      var ni = header.nx, nj = header.ny;    // number of grid points W-E and N-S (e.g., 144 x 73)
-      var date = new Date(header.refTime);
-      date.setHours(date.getHours() + header.forecastTime);
+    // The grid's origin (e.g., 0.0E, 90.0N)
+    const λ0 = builder.header.lo1;
+    const φ0 = builder.header.la1;
 
-      // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases from φ0.
-      // http://www.nco.ncep.noaa.gov/pmb/docs/grib2/grib2_table3-4.shtml
-      var grid = [], p = 0;
-      var isContinuous = Math.floor(ni * Δλ) >= 360;
-      for (var j = 0; j < nj; j++) {
-          var row = [];
-          for (var i = 0; i < ni; i++, p++) {
-              row[i] = builder.data(p);
-          }
-          if (isContinuous) {
-              // For wrapped grids, duplicate first column as last column to simplify interpolation logic
-              row.push(row[0]);
-          }
-          grid[j] = row;
+    // Distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat).
+    const Δλ = builder.header.dx;
+    const Δφ = builder.header.dy;
+
+    // Number of grid points W-E and N-S (e.g., 144 x 73).
+    const ni = builder.header.nx;
+    const nj = builder.header.ny;
+
+    // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases
+    // from φ0:
+    // http://www.nco.ncep.noaa.gov/pmb/docs/grib2/grib2_table3-4.shtml
+    const grid = [];
+    const isContinuous = Math.floor(ni * Δλ) >= 360;
+    let p = 0;
+
+    for (let j = 0; j < nj; j++) {
+      const row = [];
+      for (let i = 0; i < ni; i++, p++) {
+        row[i] = builder.data(p);
       }
 
-      function interpolate(λ, φ) {
-          var i = math.floorMod(λ - λ0, 360) / Δλ;  // calculate longitude index in wrapped range [0, 360)
-          var j = (φ0 - φ) / Δφ;                 // calculate latitude index in direction +90 to -90
-
-          var fi = Math.floor(i), ci = fi + 1;
-          var fj = Math.floor(j), cj = fj + 1;
-
-          var row;
-          if ((row = grid[fj])) {
-              var g00 = row[fi];
-              var g10 = row[ci];
-              if (isValue(g00) && isValue(g10) && (row = grid[cj])) {
-                  var g01 = row[fi];
-                  var g11 = row[ci];
-                  if (isValue(g01) && isValue(g11)) {
-                      // All four points found, so interpolate the value.
-                      return builder.interpolate(i - fi, j - fj, g00, g10, g01, g11);
-                  }
-              }
-          }
-          return null;
+      // For wrapped grids, duplicate first column as last column to simplify
+      // interpolation logic.
+      if (isContinuous) {
+        row.push(row[0]);
       }
-      return {
-        date: date,
-        interpolate: interpolate
-      };
+
+      grid[j] = row;
+    }
+
+    return function (λ, φ) {
+      // Calculate longitude index in wrapped range [0, 360).
+      const i = math.floorMod(λ - λ0, 360) / Δλ;
+
+      // Calculate latitude index in direction +90 to -90.
+      const j = (φ0 - φ) / Δφ;
+      const fi = Math.floor(i), ci = fi + 1;
+      const fj = Math.floor(j), cj = fj + 1;
+
+      let row;
+      if ((row = grid[fj])) {
+        const g00 = row[fi];
+        const g10 = row[ci];
+        if (isValue(g00) && isValue(g10) && (row = grid[cj])) {
+          const g01 = row[fi];
+          const g11 = row[ci];
+          if (isValue(g01) && isValue(g11)) {
+            // All four points found, so interpolate the value.
+            return builder.interpolate(i - fi, j - fj, g00, g10, g01, g11);
+          }
+        }
+      }
+      return null;
+    }
   };
 
   /**
@@ -188,7 +202,7 @@ export const Windy = function(windyConfig) {
           const φ = coord[1];
 
           if (isFinite(λ)) {
-            let wind = grid.interpolate(λ, φ);
+            let wind = grid(λ, φ);
 
             if (wind) {
               wind = distort(λ, φ, x, y, velocity, wind, extent);
@@ -318,12 +332,13 @@ export const Windy = function(windyConfig) {
 
   /**
    * Updates the wind animation with new configurations.
+   * @param {!ConfigPayload} A ConfigPayload instance. 
    */
   const update = function(config){
     const extent = config.extent();
-    const width = config.width || config.element.clientWidth;
-    const height = config.height || config.element.clientHeight;
-    const bounds = config.bounds || [[0, 0], [width, height]];
+    const width = extent.width;
+    const height = extent.height;
+    const bounds = extent.cropBounds || [[0, 0], [width, height]];
 
     config.canvas.width = width;
     config.canvas.height = height;
@@ -331,10 +346,10 @@ export const Windy = function(windyConfig) {
     config.canvas.style.height = height + 'px';
 
     const mapBounds = {
-      south: math.deg2rad(extent[0][1]),
-      north: math.deg2rad(extent[1][1]),
-      east: math.deg2rad(extent[1][0]),
-      west: math.deg2rad(extent[0][0]),
+      south: math.deg2rad(extent.latlng[0][1]),
+      north: math.deg2rad(extent.latlng[1][1]),
+      east: math.deg2rad(extent.latlng[1][0]),
+      west: math.deg2rad(extent.latlng[0][0]),
       width: width,
       height: height
     };

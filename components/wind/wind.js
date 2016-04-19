@@ -6,23 +6,15 @@ import {
   debounce,
   supportsCanvas
 } from '../utilities/functions';
+
 import {Windy} from './windy';
 
-/**
- * ConfigPayload can be passed at construction and on update.
- *
- * @typedef {{
- *   canvas: (!HTMLCanvasElement) The canvas to which wind will be rendered.
- *   element: (!HTMLElement|Object) A parent element of the canvas.
- *   extent: (Function():!Array<Array<number, number>>) [[west, south], [east, north]]
- *   data: (!Object) Wind data from NOAA (see examples in data/)
- * }}
- */
-let ConfigPayload;
 
 export class WindMap {
   /**
-   * A constructor for the WindMap.
+   * A constructor for the WindMap. See typedefs.js for a description of
+   * ConfigPayload.
+   *
    * @param {!ConfigPayload} config An instance of ConfigPayload.
    */
   constructor(config) {
@@ -34,7 +26,6 @@ export class WindMap {
     this.config_ = {
       canvas: config.canvas,
       extent: config.extent,
-      element: config.element,
       data: config.data || {},
     };
 
@@ -69,8 +60,8 @@ export class WindMap {
       particleReduction: config.particleReduction
     });
 
-    // Update the data if it exists.
-    if (config.data) this.config_.data = config.data;
+    // Update the wind data if it exists.
+    this.config_.data = config.data || this.config_.data;
 
     this.updateWindy_();
     return this;
