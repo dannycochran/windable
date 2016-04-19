@@ -599,7 +599,6 @@ var WindMap = exports.WindMap = function () {
       // Optional configuration fields. These all have default values in Windy.
       Object.assign(this.config_, {
         colorScheme: config.colorScheme,
-        bounds: config.bounds,
         velocityScale: config.velocityScale,
         particleWidth: config.particleWidth,
         particleFadeOpacity: config.particleFadeOpacity,
@@ -665,6 +664,9 @@ var Windy = exports.Windy = function Windy(windyConfig) {
 
   // Reduce particle count to this fraction (improves FPS).
   var particleReduction = 0.75;
+
+  // Hold onto the previous configuration in the event of exceeding map bounds.
+  var previousBounds = void 0;
 
   var createWindBuilder = function createWindBuilder(uComp, vComp) {
     return {
@@ -990,6 +992,16 @@ var Windy = exports.Windy = function Windy(windyConfig) {
       width: width,
       height: height
     };
+
+    // Do not animate if map repeats across x-axis.
+    // @todo (dannycochran) Figure out how to continuously display wind across
+    // repeating map layout.
+    if (mapBounds.west - mapBounds.east > 0) {
+      if (config.boundsExceededCallback) {
+        config.boundsExceededCallback(mapBounds);
+      }
+      return;
+    }
 
     // Optional configurations.
     colorScheme = config.colorScheme || colorScheme;

@@ -44,6 +44,13 @@ export let MapDimensions;
  *   canvas: (!HTMLCanvasElement) The canvas to which wind will be rendered.
  *   extent: (Function():!MapDimensions) An MapDimensions object.
  *   data: (!WindData) Wind data from NOAA (see examples in data/).
+ *
+ *   boundsExceededCallback: (!Function=) An optional callback to invoke when x-axis bounds are exceeded.
+ *   colorScheme: (!Array<string>=) An optional color scheme.
+ *   velocityScale: (!number=) An optional scale for the particle velocity.
+ *   particleWidth: (!number=) An optional particle width in pixels.
+ *   particleFadeOpacity: (!number=) An optional fade opacity decimal.
+ *   particleReduction: (!number=) An optional integer for changing the number of particles.
  * }}
  */
 export let ConfigPayload;

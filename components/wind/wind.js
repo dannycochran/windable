@@ -53,7 +53,6 @@ export class WindMap {
     // Optional configuration fields. These all have default values in Windy.
     Object.assign(this.config_, {
       colorScheme: config.colorScheme,
-      bounds: config.bounds,
       velocityScale: config.velocityScale,
       particleWidth: config.particleWidth,
       particleFadeOpacity: config.particleFadeOpacity,

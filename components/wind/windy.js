@@ -38,6 +38,9 @@ export const Windy = function(windyConfig) {
   // Reduce particle count to this fraction (improves FPS).
   let particleReduction = 0.75;
 
+  // Hold onto the previous configuration in the event of exceeding map bounds.
+  let previousBounds;
+
   const createWindBuilder = function(uComp, vComp) {
     return {
       data: (i) => [uComp.data[i], vComp.data[i]],
@@ -334,7 +337,7 @@ export const Windy = function(windyConfig) {
    * Updates the wind animation with new configurations.
    * @param {!ConfigPayload} A ConfigPayload instance. 
    */
-  const update = function(config){
+  const update = function(config) {
     const extent = config.extent();
     const width = extent.width;
     const height = extent.height;
@@ -345,7 +348,7 @@ export const Windy = function(windyConfig) {
     config.canvas.style.width = width + 'px';
     config.canvas.style.height = height + 'px';
 
-    const mapBounds = {
+    let mapBounds = {
       south: math.deg2rad(extent.latlng[0][1]),
       north: math.deg2rad(extent.latlng[1][1]),
       east: math.deg2rad(extent.latlng[1][0]),
@@ -353,6 +356,16 @@ export const Windy = function(windyConfig) {
       width: width,
       height: height
     };
+
+    // Do not animate if map repeats across x-axis.
+    // @todo (dannycochran) Figure out how to continuously display wind across
+    // repeating map layout.
+    if (mapBounds.west - mapBounds.east > 0) {
+      if (config.boundsExceededCallback) {
+        config.boundsExceededCallback(mapBounds);
+      }
+      return;
+    }
 
     // Optional configurations.
     colorScheme = config.colorScheme || colorScheme;
@@ -397,4 +410,4 @@ export const Windy = function(windyConfig) {
   const windy = {};
 
   return {stop: stop, update: update};
-}
+};
