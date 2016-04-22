@@ -1,304 +1,11 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.AltitudeModel = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _functions = require('../utilities/functions');
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-/**
- * Stores altitude data.
- */
-
-var AltitudeModel = exports.AltitudeModel = function () {
-  /**
-   * Constructs an altitude model with optional configuration
-   * @param {Object=} settings Optional settings:
-   *  {
-   *    data: A hash of existing wind data.
-   *    levels: An array of discrete millibar levels.
-   *    millibars: The starting selected millibars level.
-   *  }
-   */
-
-  function AltitudeModel() {
-    var settings = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-    _classCallCheck(this, AltitudeModel);
-
-    this.data = settings.data || {};
-    this.levels = settings.levels || [200, 250, 300, 400, 500, 700, 850, 925, 1000];
-    this.millibars = settings.millibars || this.levels[8];
-  }
-
-  /**
-   * Creates a key hash from a config object.
-   * @param {Object=} config An optional config object:
-   *  {time: string|Date, millibars: number}
-   * @return {!Promise} A promise.
-   */
-
-
-  _createClass(AltitudeModel, [{
-    key: 'get',
-    value: function get() {
-      var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
-
-      config = Object.assign({
-        time: new Date(),
-        millibars: this.millibars
-      }, config);
-
-      if (config.time instanceof Date) {
-        config.time = (0, _functions.formatTime)(config.time);
-      }
-
-      var key = this.key(config);
-
-      if (!this.data[key]) {
-        this.data[key] = this.fetch(config);
-      }
-
-      this.millibars = config.millibars;
-      return this.data[key];
-    }
-
-    /**
-     * Creates a key hash from a config object.
-     * @param {!Object} config A config object:
-     *  {time: string, millibars: number}
-     * @return {string} A key hash.
-     */
-
-  }, {
-    key: 'key',
-    value: function key(config) {
-      return JSON.stringify(config);
-    }
-
-    /**
-     * Fetches wind data based on a time and millibar level. Uses browser fetch.
-     * Override window.fetch with your own Promise if browser support is an issue.
-     * @param {!Object} config A config object:
-     *  {time: string, millibars: number}
-     * @return {!Promise} A promise.
-     */
-
-  }, {
-    key: 'fetch',
-    value: function (_fetch) {
-      function fetch(_x) {
-        return _fetch.apply(this, arguments);
-      }
-
-      fetch.toString = function () {
-        return _fetch.toString();
-      };
-
-      return fetch;
-    }(function (config) {
-      return fetch(this.url(config), { method: 'get' }).then(function (response) {
-        return response.json();
-      }).then(function (json) {
-        return json;
-      }).catch(function (err) {
-        return Promise.resolve(err);
-      });
-    })
-
-    /**
-     * URL from which to fetch data.
-     * @param {!Object} config A config object:
-     *  {time: string, millibars: number}
-     * @return {string} A url string.
-     */
-
-  }, {
-    key: 'url',
-    value: function url(config) {
-      return '/wind?time=' + config.time + '&millibars=' + config.millibars;
-    }
-  }]);
-
-  return AltitudeModel;
-}();
-
-;
-
-},{"../utilities/functions":5}],2:[function(require,module,exports){
-'use strict';
-
-var _altitude = require('./altitude/altitude');
-
-var _functions = require('./utilities/functions');
-
-var _map = require('./map/map');
-
-var _palettes = require('./utilities/palettes');
-
 var _wind = require('./wind/wind');
 
-require('./build.scss');
+window.WindMap = _wind.WindMap;
 
-// Create an altitude model.
-var altitudeModel = new _altitude.AltitudeModel();
-
-// Our available data is hard coded to Friday April 1, 00:00:00.
-var windDate = new Date('Fri Apr 9 2016 00:00:00 GMT-0700 (PDT)');
-
-// Populate the select menu with millibar levels.
-var menu = document.getElementById('millibar-levels');
-var colorsMenu = document.getElementById('color-schemes');
-var particleInput = document.getElementById('particles-range');
-var speedInput = document.getElementById('speed-range');
-
-altitudeModel.levels.forEach(function (level) {
-  var select = document.createElement('option');
-  select.innerHTML = level;
-  menu.appendChild(select);
-});
-
-// // Populate the colors menu.
-var colors = Object.keys(_palettes.palettes);
-colors.forEach(function (palette) {
-  var select = document.createElement('option');
-  select.innerHTML = palette;
-  colorsMenu.appendChild(select);
-});
-
-colorsMenu.selectedIndex = colors.indexOf('default');
-menu.selectedIndex = altitudeModel.levels.indexOf(altitudeModel.millibars);
-
-// Wait for the data to load and the map to be in the DOM.
-Promise.all([altitudeModel.get({ time: windDate }), _map.googleMap.load]).then(function (response) {
-  var windMap = new _wind.WindMap({
-    canvas: _map.googleMap.canvas,
-    data: response[0],
-    extent: _map.googleMap.extent
-  });
-
-  ['bounds_changed', 'resize'].forEach(function (listener) {
-    _map.googleMap.map.addListener(listener, windMap.update.bind(windMap));
-  });
-
-  // UI STUFF
-  var onSelectAltitude = function onSelectAltitude(e) {
-    var selectedIndex = menu.selectedIndex;
-    menu.disabled = true;
-    altitudeModel.get({
-      time: windDate,
-      millibars: altitudeModel.levels[selectedIndex]
-    }).then(function (data) {
-      windMap.update({ data: data });
-      menu.disabled = false;
-    });
-  };
-
-  var onSelectColor = function onSelectColor(e) {
-    var selectedIndex = colorsMenu.selectedIndex;
-    windMap.update({ colorScheme: _palettes.palettes[colors[selectedIndex]] });
-  };
-
-  var onChangeParticleCount = function onChangeParticleCount(e) {
-    var value = Math.max(Number(e.currentTarget.value) / 100, 0.01);
-    windMap.update({ particleReduction: value });
-  };
-
-  var onChangeParticleSpeed = function onChangeParticleSpeed(e) {
-    var value = parseFloat(e.currentTarget.value) * 0.0000001;
-    windMap.update({ velocityScale: value });
-  };
-
-  speedInput.addEventListener('change', onChangeParticleSpeed);
-  particleInput.addEventListener('change', onChangeParticleCount);
-  menu.addEventListener('change', onSelectAltitude);
-  colorsMenu.addEventListener('change', onSelectColor);
-});
-
-},{"./altitude/altitude":1,"./build.scss":3,"./map/map":4,"./utilities/functions":5,"./utilities/palettes":7,"./wind/wind":8}],3:[function(require,module,exports){
-module.exports = require('sassify').byUrl('data:text/css;base64,aHRtbCwgYm9keSB7CiAgd2lkdGg6IDEwMCU7CiAgaGVpZ2h0OiAxMDAlOwogIG1hcmdpbjogMDsKICBwYWRkaW5nOiAwIDAgMCAwOyB9CgojYWx0aXR1ZGUtbWVudSwgI2NvbG9ycy1tZW51LCAjcGFydGljbGVzLW1lbnUsICNzcGVlZC1tZW51IHsKICBwb3NpdGlvbjogYWJzb2x1dGU7CiAgd2lkdGg6IDIwMHB4OwogIHRvcDogMTBweDsKICByaWdodDogMTBweDsKICBiYWNrZ3JvdW5kLWNvbG9yOiBsaWdodGdyZXk7CiAgcGFkZGluZzogMTBweDsgfQogICNhbHRpdHVkZS1tZW51IGxhYmVsLCAjY29sb3JzLW1lbnUgbGFiZWwsICNwYXJ0aWNsZXMtbWVudSBsYWJlbCwgI3NwZWVkLW1lbnUgbGFiZWwgewogICAgcGFkZGluZzogNXB4OwogICAgZGlzcGxheTogYmxvY2s7IH0KICAjYWx0aXR1ZGUtbWVudSBzZWxlY3QsICNjb2xvcnMtbWVudSBzZWxlY3QsICNwYXJ0aWNsZXMtbWVudSBzZWxlY3QsICNzcGVlZC1tZW51IHNlbGVjdCB7CiAgICB3aWR0aDogMTAwJTsgfQogICNhbHRpdHVkZS1tZW51IGlucHV0LCAjY29sb3JzLW1lbnUgaW5wdXQsICNwYXJ0aWNsZXMtbWVudSBpbnB1dCwgI3NwZWVkLW1lbnUgaW5wdXQgewogICAgd2lkdGg6IDEwMCU7IH0KCiNjb2xvcnMtbWVudSB7CiAgdG9wOiA5MHB4OyB9CgojcGFydGljbGVzLW1lbnUgewogIHRvcDogMTcwcHg7IH0KCiNzcGVlZC1tZW51IHsKICB0b3A6IDI1MHB4OyB9CgoucGFyZW50LnBlcnNwZWN0aXZlIHsKICAtd2Via2l0LXRyYW5zZm9ybTogcGVyc3BlY3RpdmUoMjUwcHgpIHJvdGF0ZVgoMzBkZWcpOwogIC1tb3otdHJhbnNmb3JtOiBwZXJzcGVjdGl2ZSgyNTBweCkgcm90YXRlWCgzMGRlZyk7CiAgLXdlYmtpdC10cmFuc2Zvcm0tc3R5bGU6IHByZXNlcnZlLTNkOwogIC1tb3otdHJhbnNmb3JtLXN0eWxlOiBwcmVzZXJ2ZS0zZDsgfQoKLm1hcCB7CiAgcG9zaXRpb246IHJlbGF0aXZlOwogIGhlaWdodDogMTAwJTsKICB3aWR0aDogMTAwJTsKICAtbW96LXRyYW5zZm9ybTogdHJhbnNsYXRlWig1MHB4KTsKICAtd2Via2l0LXRyYW5zZm9ybTogdHJhbnNsYXRlWig1MHB4KTsgfQoKLyojIHNvdXJjZU1hcHBpbmdVUkw9ZGF0YTphcHBsaWNhdGlvbi9qc29uO2Jhc2U2NCxld29KSW5abGNuTnBiMjRpT2lBekxBb0pJbVpwYkdVaU9pQWlZblZwYkdRdWMyTnpjeUlzQ2draWMyOTFjbU5sY3lJNklGc0tDUWtpWW5WcGJHUXVjMk56Y3lJS0NWMHNDZ2tpYzI5MWNtTmxjME52Ym5SbGJuUWlPaUJiQ2drSklrQmphR0Z5YzJWMElDZDFkR1l0T0NjN1hHNWNibWgwYld3c0lHSnZaSGtnZTF4dUlDQjNhV1IwYURvZ01UQXdKVHRjYmlBZ2FHVnBaMmgwT2lBeE1EQWxPMXh1SUNCdFlYSm5hVzQ2SURBN1hHNGdJSEJoWkdScGJtYzZJREFnTUNBd0lEQTdYRzU5WEc1Y2JpTmhiSFJwZEhWa1pTMXRaVzUxTENBalkyOXNiM0p6TFcxbGJuVXNJQ053WVhKMGFXTnNaWE10YldWdWRTd2dJM053WldWa0xXMWxiblVnZTF4dUlDQndiM05wZEdsdmJqb2dZV0p6YjJ4MWRHVTdYRzRnSUhkcFpIUm9PaUF5TURCd2VEdGNiaUFnZEc5d09pQXhNSEI0TzF4dUlDQnlhV2RvZERvZ01UQndlRHRjYmlBZ1ltRmphMmR5YjNWdVpDMWpiMnh2Y2pvZ2JHbG5hSFJuY21WNU8xeHVJQ0J3WVdSa2FXNW5PaUF4TUhCNE8xeHVJQ0JzWVdKbGJDQjdYRzRnSUNBZ2NHRmtaR2x1WnpvZ05YQjRPMXh1SUNBZ0lHUnBjM0JzWVhrNklHSnNiMk5yTzF4dUlDQjlYRzRnSUhObGJHVmpkQ0I3WEc0Z0lDQWdkMmxrZEdnNklERXdNQ1U3WEc0Z0lIMWNiaUFnYVc1d2RYUWdlMXh1SUNBZ0lIZHBaSFJvT2lBeE1EQWxPMXh1SUNCOVhHNTlYRzVjYmlOamIyeHZjbk10YldWdWRTQjdYRzRnSUhSdmNEb2dPVEJ3ZUR0Y2JuMWNibHh1STNCaGNuUnBZMnhsY3kxdFpXNTFJSHRjYmlBZ2RHOXdPaUF4TnpCd2VEdGNibjFjYmx4dUkzTndaV1ZrTFcxbGJuVWdlMXh1SUNCMGIzQTZJREkxTUhCNE8xeHVmVnh1WEc0dWNHRnlaVzUwTG5CbGNuTndaV04wYVhabElIdGNiaUFnTFhkbFltdHBkQzEwY21GdWMyWnZjbTA2SUhCbGNuTndaV04wYVhabEtESTFNSEI0S1NCeWIzUmhkR1ZZS0RNd1pHVm5LVHRjYmlBZ0lDQWdMVzF2ZWkxMGNtRnVjMlp2Y20wNklIQmxjbk53WldOMGFYWmxLREkxTUhCNEtTQnliM1JoZEdWWUtETXdaR1ZuS1R0Y2JpQWdMWGRsWW10cGRDMTBjbUZ1YzJadmNtMHRjM1I1YkdVNklIQnlaWE5sY25abExUTmtPMXh1SUNBZ0lDQXRiVzk2TFhSeVlXNXpabTl5YlMxemRIbHNaVG9nY0hKbGMyVnlkbVV0TTJRN1hHNTlYRzVjYmk1dFlYQWdlMXh1SUNCd2IzTnBkR2x2YmpvZ2NtVnNZWFJwZG1VN1hHNGdJR2hsYVdkb2REb2dNVEF3SlR0Y2JpQWdkMmxrZEdnNklERXdNQ1U3WEc0Z0lDMXRiM290ZEhKaGJuTm1iM0p0T2lCMGNtRnVjMnhoZEdWYUtEVXdjSGdwTzF4dUlDQXRkMlZpYTJsMExYUnlZVzV6Wm05eWJUb2dkSEpoYm5Oc1lYUmxXaWcxTUhCNEtUdGNibjBpQ2dsZExBb0pJbTFoY0hCcGJtZHpJam9nSWtGQlJVRXNTVUZCU1N4RlFVRkZMRWxCUVVrc1EwRkJRenRGUVVOVUxFdEJRVXNzUlVGQlJTeEpRVUZMTzBWQlExb3NUVUZCVFN4RlFVRkZMRWxCUVVzN1JVRkRZaXhOUVVGTkxFVkJRVVVzUTBGQlJUdEZRVU5XTEU5QlFVOHNSVUZCUlN4UFFVRlJMRWRCUTJ4Q096dEJRVVZFTEdOQlFXTXNSVUZCUlN4WlFVRlpMRVZCUVVVc1pVRkJaU3hGUVVGRkxGZEJRVmNzUTBGQlF6dEZRVU42UkN4UlFVRlJMRVZCUVVVc1VVRkJVenRGUVVOdVFpeExRVUZMTEVWQlFVVXNTMEZCVFR0RlFVTmlMRWRCUVVjc1JVRkJSU3hKUVVGTE8wVkJRMVlzUzBGQlN5eEZRVUZGTEVsQlFVczdSVUZEV2l4blFrRkJaMElzUlVGQlJTeFRRVUZWTzBWQlF6VkNMRTlCUVU4c1JVRkJSU3hKUVVGTExFZEJWMlk3UlVGcVFrUXNZMEZCWXl4RFFVOWFMRXRCUVVzc1JVRlFVeXhaUVVGWkxFTkJUekZDTEV0QlFVc3NSVUZRZFVJc1pVRkJaU3hEUVU4elF5eExRVUZMTEVWQlVIZERMRmRCUVZjc1EwRlBlRVFzUzBGQlN5eERRVUZETzBsQlEwb3NUMEZCVHl4RlFVRkZMRWRCUVVrN1NVRkRZaXhQUVVGUExFVkJRVVVzUzBGQlRTeEhRVU5vUWp0RlFWWklMR05CUVdNc1EwRlhXaXhOUVVGTkxFVkJXRkVzV1VGQldTeERRVmN4UWl4TlFVRk5MRVZCV0hOQ0xHVkJRV1VzUTBGWE0wTXNUVUZCVFN4RlFWaDFReXhYUVVGWExFTkJWM2hFTEUxQlFVMHNRMEZCUXp0SlFVTk1MRXRCUVVzc1JVRkJSU3hKUVVGTExFZEJRMkk3UlVGaVNDeGpRVUZqTEVOQlkxb3NTMEZCU3l4RlFXUlRMRmxCUVZrc1EwRmpNVUlzUzBGQlN5eEZRV1IxUWl4bFFVRmxMRU5CWXpORExFdEJRVXNzUlVGa2QwTXNWMEZCVnl4RFFXTjRSQ3hMUVVGTExFTkJRVU03U1VGRFNpeExRVUZMTEVWQlFVVXNTVUZCU3l4SFFVTmlPenRCUVVkSUxGbEJRVmtzUTBGQlF6dEZRVU5ZTEVkQlFVY3NSVUZCUlN4SlFVRkxMRWRCUTFnN08wRkJSVVFzWlVGQlpTeERRVUZETzBWQlEyUXNSMEZCUnl4RlFVRkZMRXRCUVUwc1IwRkRXanM3UVVGRlJDeFhRVUZYTEVOQlFVTTdSVUZEVml4SFFVRkhMRVZCUVVVc1MwRkJUU3hIUVVOYU96dEJRVVZFTEU5QlFVOHNRVUZCUVN4WlFVRlpMRU5CUVVNN1JVRkRiRUlzYVVKQlFXbENMRVZCUVVVc2EwSkJRVmNzUTBGQlVTeGpRVUZQTzBWQlF6RkRMR05CUVdNc1JVRkJSU3hyUWtGQlZ5eERRVUZSTEdOQlFVODdSVUZETjBNc2RVSkJRWFZDTEVWQlFVVXNWMEZCV1R0RlFVTnNReXh2UWtGQmIwSXNSVUZCUlN4WFFVRlpMRWRCUTNSRE96dEJRVVZFTEVsQlFVa3NRMEZCUXp0RlFVTklMRkZCUVZFc1JVRkJSU3hSUVVGVE8wVkJRMjVDTEUxQlFVMHNSVUZCUlN4SlFVRkxPMFZCUTJJc1MwRkJTeXhGUVVGRkxFbEJRVXM3UlVGRFdpeGpRVUZqTEVWQlFVVXNaMEpCUVZVN1JVRkRNVUlzYVVKQlFXbENMRVZCUVVVc1owSkJRVlVzUjBGRE9VSWlMQW9KSW01aGJXVnpJam9nVzEwS2ZRPT0gKi8=');;
-},{"sassify":10}],4:[function(require,module,exports){
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var resolve = void 0;
-
-var googleMap = exports.googleMap = {
-  element: undefined,
-  map: undefined,
-  canvas: undefined,
-  load: new Promise(function (res, rej) {
-    resolve = res;
-  }),
-  update: update,
-  extent: extent
-};
-
-/**
- * Returns extent of the map.
- * @return {!MapDimensions} Bounds of the map.
- */
-function extent() {
-  var bounds = googleMap.map.getBounds();
-
-  return {
-    width: googleMap.element.clientWidth,
-    height: googleMap.element.clientHeight,
-    latlng: [[bounds.j.j, bounds.R.R], [bounds.j.R, bounds.R.j]]
-  };
-}
-
-function init() {
-  // initialize the map
-  var mapOptions = {
-    zoom: 4,
-    center: new google.maps.LatLng(39.3, -95.8),
-    mapTypeId: google.maps.MapTypeId.ROADMAP,
-    styles: [{
-      featureType: 'water',
-      stylers: [{ color: '#ffffff' }]
-    }, {
-      featureType: 'poi',
-      stylers: [{ visibility: 'off' }]
-    }]
-  };
-
-  googleMap.element = document.getElementById('google-map-canvas');
-  googleMap.map = new google.maps.Map(googleMap.element, mapOptions);
-
-  // initialize the canvasLayer
-  var canvasLayerOptions = {
-    map: googleMap.map,
-    animate: false,
-    updateHandler: function updateHandler() {
-      return resolve(update());
-    }
-  };
-  var canvasLayer = new CanvasLayer(canvasLayerOptions);
-  googleMap.canvas = canvasLayer.canvas;
-}
-
-/**
- * We need to scale and translate the map for current view.
- * see https://developers.google.com/maps/documentation/javascript/maptypes#MapCoordinates
- */
-function update() {
-  var mapProjection = googleMap.map.getProjection();
-  var scale = Math.pow(2, googleMap.map.zoom);
-  googleMap.canvas.getContext('2d').scale(scale, scale);
-}
-
-window.onload = init;
-
-},{}],5:[function(require,module,exports){
+},{"./wind/wind":5}],2:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -380,7 +87,7 @@ var isValue = exports.isValue = function isValue(val) {
   return val !== null && val !== undefined;
 };
 
-},{}],6:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -496,7 +203,7 @@ var math = exports.math = {
   rad2deg: rad2deg
 };
 
-},{}],7:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -524,9 +231,8 @@ var palettes = exports.palettes = {
   Reds: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
   Greys: ['#ffffff', '#f0f0f0', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000']
 };
-palettes.default = palettes.BuPu;
 
-},{}],8:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -539,6 +245,8 @@ var _createClass = function () { function defineProperties(target, props) { for 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       */
 
 var _functions = require('../utilities/functions');
+
+var _palettes = require('../utilities/palettes');
 
 var _windy = require('./windy');
 
@@ -598,7 +306,7 @@ var WindMap = exports.WindMap = function () {
 
       // Optional configuration fields. These all have default values in Windy.
       Object.assign(this.config_, {
-        colorScheme: config.colorScheme,
+        colorScheme: config.colorScheme || _palettes.palettes.Purples,
         velocityScale: config.velocityScale,
         particleWidth: config.particleWidth,
         particleFadeOpacity: config.particleFadeOpacity,
@@ -616,7 +324,7 @@ var WindMap = exports.WindMap = function () {
   return WindMap;
 }();
 
-},{"../utilities/functions":5,"./windy":9}],9:[function(require,module,exports){
+},{"../utilities/functions":2,"../utilities/palettes":4,"./windy":6}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -650,8 +358,8 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   // Singleton for no wind in the form: [u, v, magnitude].
   var NULL_WIND_VECTOR = [NaN, NaN, null];
 
-  // Default color scheme is Purple -> Blue.
-  var colorScheme = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'];
+  // Color scheme can be defined by user.
+  var colorScheme = [];
 
   // The lower this is, the faster the particles disappear from the screen.
   var particleFadeOpacity = 0.97;
@@ -1027,45 +735,4 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   return { stop: stop, update: update };
 };
 
-},{"../utilities/functions":5,"../utilities/math":6}],10:[function(require,module,exports){
-module.exports = require('cssify');
-},{"cssify":11}],11:[function(require,module,exports){
-module.exports = function (css, customDocument) {
-  var doc = customDocument || document;
-  if (doc.createStyleSheet) {
-    var sheet = doc.createStyleSheet()
-    sheet.cssText = css;
-    return sheet.ownerNode;
-  } else {
-    var head = doc.getElementsByTagName('head')[0],
-        style = doc.createElement('style');
-
-    style.type = 'text/css';
-
-    if (style.styleSheet) {
-      style.styleSheet.cssText = css;
-    } else {
-      style.appendChild(doc.createTextNode(css));
-    }
-
-    head.appendChild(style);
-    return style;
-  }
-};
-
-module.exports.byUrl = function(url) {
-  if (document.createStyleSheet) {
-    return document.createStyleSheet(url).ownerNode;
-  } else {
-    var head = document.getElementsByTagName('head')[0],
-        link = document.createElement('link');
-
-    link.rel = 'stylesheet';
-    link.href = url;
-
-    head.appendChild(link);
-    return link;
-  }
-};
-
-},{}]},{},[2]);
+},{"../utilities/functions":2,"../utilities/math":3}]},{},[1]);

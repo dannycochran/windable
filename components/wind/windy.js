@@ -23,8 +23,8 @@ export const Windy = function(windyConfig) {
   // Singleton for no wind in the form: [u, v, magnitude].
   const NULL_WIND_VECTOR = [NaN, NaN, null];
 
-  // Default color scheme is Purple -> Blue.
-  let colorScheme = ['#fff7fb','#ece7f2','#d0d1e6','#a6bddb','#74a9cf','#3690c0','#0570b0','#045a8d','#023858'];
+  // Color scheme can be defined by user.
+  let colorScheme = [];
 
   // The lower this is, the faster the particles disappear from the screen.
   let particleFadeOpacity = 0.97;

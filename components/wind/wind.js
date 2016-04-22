@@ -6,7 +6,7 @@ import {
   debounce,
   supportsCanvas
 } from '../utilities/functions';
-
+import {palettes} from '../utilities/palettes';
 import {Windy} from './windy';
 
 export class WindMap {
@@ -51,7 +51,7 @@ export class WindMap {
 
     // Optional configuration fields. These all have default values in Windy.
     Object.assign(this.config_, {
-      colorScheme: config.colorScheme,
+      colorScheme: config.colorScheme || palettes.Purples,
       velocityScale: config.velocityScale,
       particleWidth: config.particleWidth,
       particleFadeOpacity: config.particleFadeOpacity,

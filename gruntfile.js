@@ -6,8 +6,7 @@ module.exports = function (grunt) {
       dist: {
         options: {
           transform: [
-            ['babelify', {presets: 'es2015'}],
-            ['sassify', {'auto-inject': true}]
+            ['babelify', {presets: 'es2015'}]
           ],
         },
         files: {
@@ -16,44 +15,17 @@ module.exports = function (grunt) {
       }
     },
 
-    copy: {
-      vendor: {
-        expand: true,
-        cwd: 'vendor',
-        src: '**',
-        dest: 'dist/vendor'
-      },
-      index: {
-        src: 'index.html',
-        dest: 'dist/index.html'
-      }
-    },
-
     watch: {
       js: {
         files: [
           'components/build.js',
-          'components/**/*.js',
-          'components/build.scss',
-          'components/**/*.scss'
+          'components/**/*.js'
         ],
         tasks: ['browserify'],
         options: {
           livereload: true,
         },
       },
-
-      others: {
-        files: [
-          'vendor/*.css',
-          'vendor/*.js',
-          'index.html'
-        ],
-        tasks: ['copy'],
-        options: {
-          livereload: true,
-        },
-      }
     },
 
     nodemon: {
@@ -80,9 +52,8 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-concurrent');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-nodemon');
-  grunt.loadNpmTasks('grunt-contrib-copy');
 
-  const build = ['browserify', 'copy'];
+  const build = ['browserify'];
 
   grunt.registerTask('app', build.concat(['concurrent:app']));
   grunt.registerTask('rebuild', build);
