@@ -665,54 +665,33 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   // Reduce particle count to this fraction (improves FPS).
   var particleReduction = 0.75;
 
-  // Hold onto the previous configuration in the event of exceeding map bounds.
-  var previousBounds = void 0;
-
-  var createWindBuilder = function createWindBuilder(uComp, vComp) {
-    return {
-      data: function data(i) {
-        return [uComp.data[i], vComp.data[i]];
-      },
-      header: uComp.header,
-      interpolate: _math.math.bilinearInterpolateVector
-    };
-  };
-
   /**
-   * Creates a wind builder.
-   * @param {!WindData} An instance of WindData.
-   * @return {!Object} A wind builder object.
+   * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
+   * is 1x1.
+   * 
+   * @param {!WindData} windData An instance of WindData.
+   * @return {!Function} A function to interpolate the wind points on the grid.
    */
-  var createBuilder = function createBuilder(windData) {
-    var uComp = null;
-    var vComp = null;
-
-    windData.forEach(function (record) {
-      switch (record.header.parameterCategory + "," + record.header.parameterNumber) {
-        case "2,2":
-          uComp = record;break;
-        case "2,3":
-          vComp = record;break;
-      }
-    });
-
-    return createWindBuilder(uComp, vComp);
-  };
-
   var buildGrid = function buildGrid(windData) {
-    var builder = createBuilder(windData);
+    var uComp = windData[0];
+    var vComp = windData[1];
+
+    // Returns an x,y coordinate pair from uComp and vComp.
+    var getDataPoint = function getDataPoint(i) {
+      return [uComp.data[i], vComp.data[i]];
+    };
 
     // The grid's origin (e.g., 0.0E, 90.0N)
-    var λ0 = builder.header.lo1;
-    var φ0 = builder.header.la1;
+    var λ0 = uComp.header.lo1;
+    var φ0 = uComp.header.la1;
 
     // Distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat).
-    var Δλ = builder.header.dx;
-    var Δφ = builder.header.dy;
+    var Δλ = uComp.header.dx;
+    var Δφ = uComp.header.dy;
 
     // Number of grid points W-E and N-S (e.g., 144 x 73).
-    var ni = builder.header.nx;
-    var nj = builder.header.ny;
+    var ni = uComp.header.nx;
+    var nj = uComp.header.ny;
 
     // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases
     // from φ0:
@@ -724,7 +703,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     for (var j = 0; j < nj; j++) {
       var row = [];
       for (var i = 0; i < ni; i++, p++) {
-        row[i] = builder.data(p);
+        row[i] = getDataPoint(p);
       }
 
       // For wrapped grids, duplicate first column as last column to simplify
@@ -742,10 +721,10 @@ var Windy = exports.Windy = function Windy(windyConfig) {
 
       // Calculate latitude index in direction +90 to -90.
       var j = (φ0 - φ) / Δφ;
-      var fi = Math.floor(i),
-          ci = fi + 1;
-      var fj = Math.floor(j),
-          cj = fj + 1;
+      var fi = Math.floor(i);
+      var ci = fi + 1;
+      var fj = Math.floor(j);
+      var cj = fj + 1;
 
       var row = void 0;
       if (row = grid[fj]) {
@@ -756,7 +735,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
           var g11 = row[ci];
           if ((0, _functions.isValue)(g01) && (0, _functions.isValue)(g11)) {
             // All four points found, so interpolate the value.
-            return builder.interpolate(i - fi, j - fj, g00, g10, g01, g11);
+            return _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
           }
         }
       }
@@ -994,7 +973,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     };
 
     // Do not animate if map repeats across x-axis.
-    // @todo (dannycochran) Figure out how to continuously display wind across
+    // @TODO (dannycochran) Figure out how to continuously display wind across
     // repeating map layout.
     if (mapBounds.west - mapBounds.east > 0) {
       if (config.boundsExceededCallback) {

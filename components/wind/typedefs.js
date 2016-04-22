@@ -5,21 +5,20 @@
 
 /**
  * WindData is the data required to render wind animation. It is sourced
- * from NOAA: http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl.
+ * from NOAA: http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl. This is an
+ * array of length 2. The header information in each object should be constant
+ * for 2d projections.
  * @typedef [[
  *    (!Object<
  *      header: {
- *        parameterCategory: number,
- *        parameterNumber: number,
- *        refTime: number
- *        lo1:  number,
- *        la1: number,
- *        dx: number,
- *        dy: number,
- *        nx: number,
- *        ny: number,
+ *        lo1:  number, // grid x origin (e.g. 0.0E, usually 0)
+ *        la1: number, // grid y origin (e.g. 90.0N, usually 90)
+ *        dx: number, // distance between x-grid points (usually 1)
+ *        dy: number, // distance between y-grid points (usually 1)
+ *        nx: number, // number of grid points W-E (usually 360)
+ *        ny: number // number of grid points N-S (usually 181)
  *      },
- *      data: !Array<number> 
+ *      data: !Array<number> // one half of a coordinate (e.g. x in x,y)
  *   >)
  * ]]
  */

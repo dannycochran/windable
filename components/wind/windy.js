@@ -12,7 +12,7 @@ import {math} from '../utilities/math';
 
 export const Windy = function(windyConfig) {
   // Wind velocity at which particle intensity is maximum (m/s).
-  const MAX_WIND_INTENSITY = 30;
+  const MAX_WIND_INTENSITY = 30
 
   // Max number of frames a particle is drawn before regeneration.
   const MAX_PARTICLE_AGE = 100;
@@ -38,50 +38,31 @@ export const Windy = function(windyConfig) {
   // Reduce particle count to this fraction (improves FPS).
   let particleReduction = 0.75;
 
-  // Hold onto the previous configuration in the event of exceeding map bounds.
-  let previousBounds;
-
-  const createWindBuilder = function(uComp, vComp) {
-    return {
-      data: (i) => [uComp.data[i], vComp.data[i]],
-      header: uComp.header,
-      interpolate: math.bilinearInterpolateVector
-    };
-  };
-
   /**
-   * Creates a wind builder.
-   * @param {!WindData} An instance of WindData.
-   * @return {!Object} A wind builder object.
+   * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
+   * is 1x1.
+   * 
+   * @param {!WindData} windData An instance of WindData.
+   * @return {!Function} A function to interpolate the wind points on the grid.
    */
-  const createBuilder = function(windData) {
-    let uComp = null;
-    let vComp = null;
-
-    windData.forEach(function(record) {
-      switch (record.header.parameterCategory + "," + record.header.parameterNumber) {
-        case "2,2": uComp = record; break;
-        case "2,3": vComp = record; break;
-      }
-    });
-
-    return createWindBuilder(uComp, vComp);
-  };
-
   const buildGrid = function(windData) {
-    const builder = createBuilder(windData);
+    const uComp = windData[0];
+    const vComp = windData[1];
+
+    // Returns an x,y coordinate pair from uComp and vComp.
+    const getDataPoint = (i) => [uComp.data[i], vComp.data[i]];
 
     // The grid's origin (e.g., 0.0E, 90.0N)
-    const λ0 = builder.header.lo1;
-    const φ0 = builder.header.la1;
+    const λ0 = uComp.header.lo1;
+    const φ0 = uComp.header.la1;
 
     // Distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat).
-    const Δλ = builder.header.dx;
-    const Δφ = builder.header.dy;
+    const Δλ = uComp.header.dx;
+    const Δφ = uComp.header.dy;
 
     // Number of grid points W-E and N-S (e.g., 144 x 73).
-    const ni = builder.header.nx;
-    const nj = builder.header.ny;
+    const ni = uComp.header.nx;
+    const nj = uComp.header.ny;
 
     // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases
     // from φ0:
@@ -93,7 +74,7 @@ export const Windy = function(windyConfig) {
     for (let j = 0; j < nj; j++) {
       const row = [];
       for (let i = 0; i < ni; i++, p++) {
-        row[i] = builder.data(p);
+        row[i] = getDataPoint(p);
       }
 
       // For wrapped grids, duplicate first column as last column to simplify
@@ -105,14 +86,16 @@ export const Windy = function(windyConfig) {
       grid[j] = row;
     }
 
-    return function (λ, φ) {
+    return function(λ, φ) {
       // Calculate longitude index in wrapped range [0, 360).
       const i = math.floorMod(λ - λ0, 360) / Δλ;
 
       // Calculate latitude index in direction +90 to -90.
       const j = (φ0 - φ) / Δφ;
-      const fi = Math.floor(i), ci = fi + 1;
-      const fj = Math.floor(j), cj = fj + 1;
+      const fi = Math.floor(i);
+      const ci = fi + 1;
+      const fj = Math.floor(j);
+      const cj = fj + 1;
 
       let row;
       if ((row = grid[fj])) {
@@ -123,7 +106,7 @@ export const Windy = function(windyConfig) {
           const g11 = row[ci];
           if (isValue(g01) && isValue(g11)) {
             // All four points found, so interpolate the value.
-            return builder.interpolate(i - fi, j - fj, g00, g10, g01, g11);
+            return math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
           }
         }
       }
@@ -287,7 +270,7 @@ export const Windy = function(windyConfig) {
         context.stroke();
       }
     });
-  }
+  };
 
   /**
    * Animates the wind visualization.
@@ -348,7 +331,7 @@ export const Windy = function(windyConfig) {
     config.canvas.style.width = width + 'px';
     config.canvas.style.height = height + 'px';
 
-    let mapBounds = {
+    const mapBounds = {
       south: math.deg2rad(extent.latlng[0][1]),
       north: math.deg2rad(extent.latlng[1][1]),
       east: math.deg2rad(extent.latlng[1][0]),
@@ -358,7 +341,7 @@ export const Windy = function(windyConfig) {
     };
 
     // Do not animate if map repeats across x-axis.
-    // @todo (dannycochran) Figure out how to continuously display wind across
+    // @TODO (dannycochran) Figure out how to continuously display wind across
     // repeating map layout.
     if (mapBounds.west - mapBounds.east > 0) {
       if (config.boundsExceededCallback) {

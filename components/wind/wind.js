@@ -9,7 +9,6 @@ import {
 
 import {Windy} from './windy';
 
-
 export class WindMap {
   /**
    * A constructor for the WindMap. See typedefs.js for a description of
