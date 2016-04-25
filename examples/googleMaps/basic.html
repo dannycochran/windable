@@ -35,28 +35,27 @@
             {featureType: 'poi', stylers: [{visibility: 'off'}]}
           ]
         });
+        const windMap = new WindMap({
+          canvas: new CanvasLayer({map: map}).canvas,
+          extent: () => {
+            return {
+              width: element.clientWidth,
+              height: element.clientHeight,
+              latlng:[
+                [map.getBounds().j.j, map.getBounds().R.R],
+                [map.getBounds().j.R, map.getBounds().R.j]
+              ]
+            };
+          }
+        });
+        ['bounds_changed', 'resize'].forEach(listener => {
+          map.addListener(listener, windMap.update.bind(windMap));
+        });
 
         // Fetch data for 700 millibars.
         const mapDataUrl = 'https://raw.githubusercontent.com/dannycochran/windable/master/data/2016040900_700.json'
         d3.json(mapDataUrl, (err, windData) => {
-          const windMap = new WindMap({
-            canvas: new CanvasLayer({map: map}).canvas,
-            data: windData,
-            extent: () => {
-              return {
-                width: element.clientWidth,
-                height: element.clientHeight,
-                latlng:[
-                  [map.getBounds().j.j, map.getBounds().R.R],
-                  [map.getBounds().j.R, map.getBounds().R.j]
-                ]
-              };
-            }
-          });
-
-          ['bounds_changed', 'resize'].forEach(listener => {
-            map.addListener(listener, windMap.update.bind(windMap));
-          });
+          windMap.update({data: windData});
         });
       };
     </script>

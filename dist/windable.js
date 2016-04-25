@@ -273,12 +273,14 @@ var WindMap = exports.WindMap = function () {
     this.config_ = {
       canvas: config.canvas,
       extent: config.extent,
-      data: config.data || {}
+      data: config.data,
+      colorScheme: config.colorScheme || _palettes.palettes.Purples
     };
 
+    this.palettes = _palettes.palettes;
     this.windy_ = new _windy.Windy({ canvas: config.canvas });
-    this.updateWindy_ = (0, _functions.debounce)(function () {
-      _this.windy_.update(_this.config_);
+    this.startWindy_ = (0, _functions.debounce)(function () {
+      _this.windy_.start(_this.config_);
     });
 
     this.update(config);
@@ -288,6 +290,12 @@ var WindMap = exports.WindMap = function () {
     key: 'stop',
     value: function stop() {
       this.windy_.stop();
+      return this;
+    }
+  }, {
+    key: 'start',
+    value: function start() {
+      this.startWindy_();
       return this;
     }
 
@@ -306,18 +314,17 @@ var WindMap = exports.WindMap = function () {
 
       // Optional configuration fields. These all have default values in Windy.
       Object.assign(this.config_, {
-        colorScheme: config.colorScheme || _palettes.palettes.Purples,
-        velocityScale: config.velocityScale,
-        particleWidth: config.particleWidth,
-        particleFadeOpacity: config.particleFadeOpacity,
-        particleReduction: config.particleReduction
+        colorScheme: config.colorScheme || this.config_.colorScheme,
+        velocityScale: config.velocityScale || this.config_.velocityScale,
+        particleWidth: config.particleWidth || this.config_.particleWidth,
+        particleFadeOpacity: config.particleFadeOpacity || this.config_.particleFadeOpacity,
+        particleReduction: config.particleReduction || this.config_.particleReduction
       });
 
       // Update the wind data if it exists.
       this.config_.data = config.data || this.config_.data;
 
-      this.updateWindy_();
-      return this;
+      return this.start();
     }
   }]);
 
@@ -660,7 +667,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
    * Updates the wind animation with new configurations.
    * @param {!ConfigPayload} A ConfigPayload instance. 
    */
-  var update = function update(config) {
+  var start = function start(config) {
     var extent = config.extent();
     var width = extent.width;
     var height = extent.height;
@@ -683,7 +690,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     // Do not animate if map repeats across x-axis.
     // @TODO (dannycochran) Figure out how to continuously display wind across
     // repeating map layout.
-    if (mapBounds.west - mapBounds.east > 0) {
+    if (mapBounds.west - mapBounds.east > 0 || Math.abs(mapBounds.west) - Math.abs(mapBounds.east) === 0 || !config.data) {
       if (config.boundsExceededCallback) {
         config.boundsExceededCallback(mapBounds);
       }
@@ -732,7 +739,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
 
   var windy = {};
 
-  return { stop: stop, update: update };
+  return { stop: stop, start: start };
 };
 
 },{"../utilities/functions":2,"../utilities/math":3}]},{},[1]);

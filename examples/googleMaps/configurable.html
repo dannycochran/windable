@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Wind Animation Google Maps</title>
+
+    <script src="./../../dist/windable.js" defer></script>
+
+    <script src="https://maps.googleapis.com/maps/api/js" defer></script>
+    <script src="https://google-maps-utility-library-v3.googlecode.com/svn-history/r377/trunk/canvaslayer/src/CanvasLayer.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js" defer></script>
+
+    <style>
+      html, body, #google-map-canvas {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0 0 0 0;
+      }
+      #altitude-menu, #colors-menu, #particles-menu, #speed-menu {
+        position: absolute;
+        width: 200px;
+        top: 10px;
+        right: 10px;
+        background-color: lightgrey;
+        padding: 10px;
+      }
+
+      label {
+        padding: 5px;
+        display: block;
+      }
+      select {
+        width: 100%;
+      }
+      input {
+        width: 100%;
+      }
+
+      #colors-menu {
+        top: 90px;
+      }
+
+      #particles-menu {
+        top: 170px;
+      }
+
+      #speed-menu {
+        top: 250px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="google-map-canvas"></div>
+
+    <div id="altitude-menu">
+      <label>Select Altitude (millibars)</label>
+      <select id="millibar-levels"></select>
+    </div>
+
+    <div id="colors-menu">
+      <label>Select Color Scheme</label>
+      <select id="color-schemes"></select>
+    </div>
+
+    <div id="particles-menu">
+      <label>Particle Reduction</label>
+      <input id="particles-range" type="range" value="75" step="1">
+    </div>
+
+    <div id="speed-menu">
+      <label>Particle Speed</label>
+      <input id="speed-range" type="range" step="1" max="1000" value="50">
+    </div>
+
+    <script type="text/javascript">
+      window.onload = function() {
+        // Initialize the map.
+        const element = document.getElementById('google-map-canvas');
+        const map = new google.maps.Map(element, {
+          zoom: 3,
+          center: new google.maps.LatLng(39.3, -45.8),
+          styles: [
+            {featureType: 'water', stylers: [{ color: '#ffffff'}]},
+            {featureType: 'poi', stylers: [{visibility: 'off'}]}
+          ]
+        });
+        // Initialize the wind map.
+        const windMap = new WindMap({
+          canvas: new CanvasLayer({map: map}).canvas,
+          extent: () => {
+            return {
+              width: element.clientWidth,
+              height: element.clientHeight,
+              latlng:[
+                [map.getBounds().j.j, map.getBounds().R.R],
+                [map.getBounds().j.R, map.getBounds().R.j]
+              ]
+            };
+          }
+        });
+        ['bounds_changed', 'resize'].forEach(listener => {
+          map.addListener(listener, windMap.update.bind(windMap));
+        });
+
+        // Menus
+        const altitudeMenu = document.getElementById('millibar-levels');
+        const colorsMenu = document.getElementById('color-schemes');
+        const particleInput = document.getElementById('particles-range');
+        const speedInput = document.getElementById('speed-range');
+
+        // Altitude menu.
+        const selected = 1000;
+        const levels = [1000, 925, 850, 700, 500, 400, 300, 250, 200];
+        levels.forEach(level => {
+          const select = document.createElement('option')
+          select.innerHTML = level;
+          altitudeMenu.appendChild(select);
+        });
+
+        altitudeMenu.selectedIndex = levels.indexOf(selected);
+
+        // Colors menu.
+        const colors = Object.keys(windMap.palettes);
+        colors.forEach(palette => {
+          const select = document.createElement('option');
+          select.innerHTML = palette;
+          colorsMenu.appendChild(select);
+        });
+        colorsMenu.selectedIndex = colors.indexOf('Purples');
+
+        // Event handlers.
+        const onSelectColor = function(e) {
+          const selectedIndex = colorsMenu.selectedIndex;
+          windMap.update({colorScheme: windMap.palettes[colors[selectedIndex]]});
+        };
+
+        const onSelectAltitude = function(e) {
+          const selectedIndex = altitudeMenu.selectedIndex;
+          altitudeMenu.disabled = true;
+          fetchData(levels[selectedIndex]);
+        };
+
+        const onChangeParticleCount = function(e) {
+          const value = Math.max(Number(e.currentTarget.value) / 100, 0.01);
+          windMap.update({particleReduction: value});
+        };
+
+        const onChangeParticleSpeed = function(e) {
+          const value = parseFloat(e.currentTarget.value) * 0.0000001;
+          windMap.update({velocityScale: value});
+        };
+
+        altitudeMenu.addEventListener('change', onSelectAltitude);
+        colorsMenu.addEventListener('change', onSelectColor);
+        speedInput.addEventListener('change', onChangeParticleSpeed);
+        particleInput.addEventListener('change', onChangeParticleCount);
+
+        // Fetch data.
+        function fetchData(millibars) {
+          const mapDataUrl = `https://raw.githubusercontent.com/dannycochran/windable/master/data/2016040900_${millibars}.json`
+          d3.json(mapDataUrl, (err, windData) => {
+            windMap.update({data: windData});
+            altitudeMenu.disabled = false;
+          });
+        }
+
+        fetchData(selected);
+      };
+    </script>
+  </body>
+</html>

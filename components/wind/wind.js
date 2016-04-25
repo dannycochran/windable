@@ -18,19 +18,21 @@ export class WindMap {
    */
   constructor(config) {
     if (!supportsCanvas()) {
-      throw new Error(`Browser does not support canvas.`);
+      throw new Error('Browser does not support canvas.');
     }
 
     // Required configuration fields.
     this.config_ = {
       canvas: config.canvas,
       extent: config.extent,
-      data: config.data || {},
+      data: config.data,
+      colorScheme: config.colorScheme || palettes.Purples
     };
 
+    this.palettes = palettes;
     this.windy_ = new Windy({canvas: config.canvas});
-    this.updateWindy_ = debounce(() => {
-      this.windy_.update(this.config_);
+    this.startWindy_ = debounce(() => {
+      this.windy_.start(this.config_);
     });
 
     this.update(config);
@@ -38,6 +40,11 @@ export class WindMap {
 
   stop() {
     this.windy_.stop();
+    return this;
+  }
+
+  start() {
+    this.startWindy_();
     return this;
   }
 
@@ -51,17 +58,16 @@ export class WindMap {
 
     // Optional configuration fields. These all have default values in Windy.
     Object.assign(this.config_, {
-      colorScheme: config.colorScheme || palettes.Purples,
-      velocityScale: config.velocityScale,
-      particleWidth: config.particleWidth,
-      particleFadeOpacity: config.particleFadeOpacity,
-      particleReduction: config.particleReduction
+      colorScheme: config.colorScheme || this.config_.colorScheme,
+      velocityScale: config.velocityScale || this.config_.velocityScale,
+      particleWidth: config.particleWidth || this.config_.particleWidth,
+      particleFadeOpacity: config.particleFadeOpacity || this.config_.particleFadeOpacity,
+      particleReduction: config.particleReduction || this.config_.particleReduction
     });
 
     // Update the wind data if it exists.
     this.config_.data = config.data || this.config_.data;
 
-    this.updateWindy_();
-    return this;
+    return this.start();
   }
 }

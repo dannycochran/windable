@@ -320,7 +320,7 @@ export const Windy = function(windyConfig) {
    * Updates the wind animation with new configurations.
    * @param {!ConfigPayload} A ConfigPayload instance. 
    */
-  const update = function(config) {
+  const start = function(config) {
     const extent = config.extent();
     const width = extent.width;
     const height = extent.height;
@@ -343,7 +343,9 @@ export const Windy = function(windyConfig) {
     // Do not animate if map repeats across x-axis.
     // @TODO (dannycochran) Figure out how to continuously display wind across
     // repeating map layout.
-    if (mapBounds.west - mapBounds.east > 0) {
+    if (mapBounds.west - mapBounds.east > 0 ||
+        Math.abs(mapBounds.west) - Math.abs(mapBounds.east) === 0 ||
+        !config.data) {
       if (config.boundsExceededCallback) {
         config.boundsExceededCallback(mapBounds);
       }
@@ -392,5 +394,5 @@ export const Windy = function(windyConfig) {
 
   const windy = {};
 
-  return {stop: stop, update: update};
+  return {stop: stop, start: start};
 };
