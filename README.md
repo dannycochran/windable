@@ -26,14 +26,14 @@ Will set up a server at localhost:5000.
 
 # Wind Data
 
-For dynamic loading, you'd write some gross hook that:
- 1. Curls data from:
+For dynamic loading, you'd need to do three steps:
+ 1. Curl data from:
 
-http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl?file=gfs.t00z.pgrb2.1p00.f000&lev_${MILLIBARS}_mb=on&var_UGRD=on&var_VGRD=on&dir=%2Fgfs.${TIMESTAMP}
+    - http://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl?file=gfs.t00z.pgrb2.1p00.f000&lev_${MILLIBARS}_mb=on&var_UGRD=on&var_VGRD=on&dir=%2Fgfs.${TIMESTAMP}
 
-Where TIMESTAMP = YYYYMMDDHH (e.g 2016040106) -- the HH field must be one of: (00, 06, 12, 18) and MILLIBARS is an integer.
-Continuous integers for millibars aren't supported, see: ftp://ftp.cpc.ncep.noaa.gov/wd51we/ams2010_sc/Obtaining%20data.pdf
+    - Where TIMESTAMP = YYYYMMDDHH (e.g 2016040106) -- the HH field must be one of: (00, 06, 12, 18) and MILLIBARS is an integer.
+    - Continuous integers for millibars aren't supported, see: ftp://ftp.cpc.ncep.noaa.gov/wd51we/ams2010_sc/Obtaining%20data.pdf
 
- 2. Converts grib2json using grib2json via a shell command.
+ 2. Convert grib2json using grib2json.
 
  3. Send back the output json.
