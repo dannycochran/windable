@@ -345,8 +345,8 @@ var _math = require('../utilities/math');
 
 /**
  * A modified version of Esri's Windy.JS, which itself draws heavily from
- * Earth.nullschool's original implementation. Almost all of the logic from
- * those original libraries is untouched; the updates are purely aesthetic.
+ * Earth.nullschool's original implementation. Much of the logic from
+ * those original libraries is untouched; the updates are mostly aesthetic.
  *
  * https://github.com/Esri/wind-js (MIT License)
  * https://github.com/cambecc/earth (MIT License)
