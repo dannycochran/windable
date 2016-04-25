@@ -13,6 +13,7 @@ Basic Google Maps usage:
 https://damp-reaches-87397.herokuapp.com/google_basic
 
 Configurable Google Maps usage:
+
 https://damp-reaches-87397.herokuapp.com/google_configurable
 
 # Running
