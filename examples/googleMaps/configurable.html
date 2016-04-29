@@ -90,12 +90,21 @@
         const windMap = new WindMap({
           canvas: new CanvasLayer({map: map}).canvas,
           extent: () => {
+            const bounds = map.getBounds();
+            // The googleMaps API changed from R to H recently.
+            if (!bounds.H) {
+              bounds.H = {
+                H: bounds.R.R,
+                j: bounds.R.j
+              };
+              bounds.j.H = bounds.j.R;
+            }
             return {
               width: element.clientWidth,
               height: element.clientHeight,
               latlng:[
-                [map.getBounds().j.j, map.getBounds().R.R],
-                [map.getBounds().j.R, map.getBounds().R.j]
+                [bounds.j.j, bounds.H.H],
+                [bounds.j.H, bounds.H.j]
               ]
             };
           }
