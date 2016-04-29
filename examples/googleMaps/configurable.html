@@ -6,7 +6,7 @@
 
     <script src="./../../dist/windable.js" defer></script>
 
-    <script src="https://maps.googleapis.com/maps/api/js" defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.24" defer></script>
     <script src="https://google-maps-utility-library-v3.googlecode.com/svn-history/r377/trunk/canvaslayer/src/CanvasLayer.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js" defer></script>
 
@@ -90,21 +90,12 @@
         const windMap = new WindMap({
           canvas: new CanvasLayer({map: map}).canvas,
           extent: () => {
-            const bounds = map.getBounds();
-            // The googleMaps API changed from R to H recently.
-            if (!bounds.H) {
-              bounds.H = {
-                H: bounds.R.R,
-                j: bounds.R.j
-              };
-              bounds.j.H = bounds.j.R;
-            }
             return {
               width: element.clientWidth,
               height: element.clientHeight,
               latlng:[
-                [bounds.j.j, bounds.H.H],
-                [bounds.j.H, bounds.H.j]
+                [map.getBounds().j.j, map.getBounds().H.H],
+                [map.getBounds().j.H, map.getBounds().H.j]
               ]
             };
           }
