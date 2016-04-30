@@ -58,6 +58,21 @@ const windMap = new WindMap({
 });
 ```
 
+windMap has three functions: stop, start, and update. Upon initialization, the windMap is started. Subsequent calls to update will clear the rendering canvas and restart the animation with any
+new configurations.
+
+To update your windMap with new configurations or data, you can do:
+
+```javascript
+windMap.update({
+  data: newWindData,
+  colorScheme: arrayOfHexColorStrings,
+  particuleReduction: 0.1;
+})
+```
+
+See ConfigPayload in components/wind/typedefs.js for a list of configurations.
+
 # Wind Data
 
 For dynamic loading, you'd need to do three steps:
