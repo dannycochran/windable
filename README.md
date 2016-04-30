@@ -30,9 +30,9 @@ Will set up a server at localhost:5000.
 
 # Basic Configuration
 
-WindMap requires you provide a canvas upon which to draw, an extent function that returns the map bounds, and a data object (see components/wind/typedefs.js for more info).
+WindMap requires you provide a canvas upon which to draw, an extent function that returns the map bounds, and a data object (see [components/wind/typedefs.js](https://github.com/dannycochran/windable/blob/master/components/wind/typedefs.js) for more info).
 
-Configuration with Google Maps would look something like this (see examples/googleMaps/basic.html):
+Configuration with Google Maps would look something like this (see [examples/googleMaps/basic.html](https://github.com/dannycochran/windable/blob/master/examples/googleMaps/basic.html)):
 
 ```javascript
 const element = document.getElementById('google-map-canvas');
@@ -71,7 +71,7 @@ windMap.update({
 });
 ```
 
-See ConfigPayload in components/wind/typedefs.js for a list of configurations.
+See ConfigPayload in [components/wind/typedefs.js](https://github.com/dannycochran/windable/blob/master/components/wind/typedefs.js) for a list of configurations.
 
 # Wind Data
 
