@@ -28,6 +28,34 @@ grunt app
 ```
 Will set up a server at localhost:5000.
 
+# Basic Configuration
+
+WindMap requires you provide a canvas upon which to draw, an extent function that returns the map bounds, and a data object (see components/wind/typedefs.js for more info).
+
+Configuration with Google Maps would look something like this (see examples/googleMaps/basic.html):
+
+```javascript
+const element = document.getElementById('google-map-canvas');
+const map = new google.maps.Map(element, {
+  zoom: 3,
+  center: new google.maps.LatLng(39.3, -45.8)
+});
+const windMap = new WindMap({
+  canvas: new CanvasLayer({map: map}).canvas,
+  data: windData // see below for retrieving windData, and examples of data in data/
+  extent: () => {
+    return {
+      width: element.clientWidth,
+      height: element.clientHeight,
+      latlng:[
+        [map.getBounds().j.j, map.getBounds().H.H],
+        [map.getBounds().j.H, map.getBounds().H.j]
+      ]
+    };
+  }
+});
+```
+
 # Wind Data
 
 For dynamic loading, you'd need to do three steps:
