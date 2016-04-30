@@ -36,10 +36,12 @@ Configuration with Google Maps would look something like this (see examples/goog
 
 ```javascript
 const element = document.getElementById('google-map-canvas');
+
 const map = new google.maps.Map(element, {
   zoom: 3,
   center: new google.maps.LatLng(39.3, -45.8)
 });
+
 const windMap = new WindMap({
   canvas: new CanvasLayer({map: map}).canvas,
   data: windData // see below for retrieving windData, and examples of data in data/
