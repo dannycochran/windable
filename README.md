@@ -1,4 +1,4 @@
-# Windable Overview
+# Windable (v0.0.1)
 
 Windable is a small (4kb gzipped) configurable library for setting up wind visualizations on your maps.
 It can work with any Canvas map layer (Google Maps, Leaflet).
