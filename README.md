@@ -1,6 +1,6 @@
 # Windable Overview
 
-Windable is a (in progress) configurable library for setting up wind visualizations on your maps.
+Windable is a small (4kb gzipped) configurable library for setting up wind visualizations on your maps.
 It can work with any Canvas map layer (Google Maps, Leaflet).
 Windable uses the same rendering logic from earth.nullschool and Esri's windy.js, providing an abstraction to more easily configure your maps.
 
