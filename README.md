@@ -68,7 +68,7 @@ windMap.update({
   data: newWindData,
   colorScheme: arrayOfHexColorStrings,
   particuleReduction: 0.1;
-})
+});
 ```
 
 See ConfigPayload in components/wind/typedefs.js for a list of configurations.
