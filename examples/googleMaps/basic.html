@@ -48,9 +48,9 @@
             };
           }
         });
-        // ['bounds_changed', 'resize'].forEach(listener => {
-        //   map.addListener(listener, windMap.update.bind(windMap));
-        // });
+        ['bounds_changed', 'resize'].forEach(listener => {
+          map.addListener(listener, windMap.update.bind(windMap));
+        });
 
         // Fetch data for 700 millibars.
         const mapDataUrl = 'https://raw.githubusercontent.com/dannycochran/windable/master/data/2016040900_700.json'
