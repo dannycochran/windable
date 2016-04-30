@@ -12,6 +12,10 @@ Basic Google Maps usage:
 
 https://damp-reaches-87397.herokuapp.com/google_basic
 
+Basic Leaflet usage:
+
+https://damp-reaches-87397.herokuapp.com/leaflet
+
 Configurable Google Maps usage:
 
 https://damp-reaches-87397.herokuapp.com/google_configurable
