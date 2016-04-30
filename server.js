@@ -21,6 +21,10 @@ app.get('/google_basic', (req, res) => {
 
 app.get('/google_configurable', sendConfigurable);
 
+app.get('/leaflet', (req, res) => {
+  res.status(200).sendfile('./examples/leaflet/basic.html');
+});
+
 app.get('/', sendConfigurable);
 
 // Start the server

@@ -719,21 +719,21 @@ var Windy = exports.Windy = function Windy(windyConfig) {
    * Stops and clears the wind animation.
    */
   var stop = function stop() {
-    clear(windy.mapBounds);
+    clear();
     windy.stop = true;
     if (windy.field) windy.field.release();
   };
 
-  var clear = function clear(bounds) {
-    if (bounds) {
-      var context = windyConfig.canvas.getContext('2d');
-      context.clearRect(0, 0, bounds.width, bounds.height);
+  var clear = function clear() {
+    if (!windy.mapBounds) return;
 
-      if (context.resetTransform) {
-        context.resetTransform();
-      } else {
-        context.setTransform(1, 0, 0, 1, 0, 0);
-      }
+    var context = windyConfig.canvas.getContext('2d');
+    context.clearRect(0, 0, windy.mapBounds.width, windy.mapBounds.height);
+
+    if (context.resetTransform) {
+      context.resetTransform();
+    } else {
+      context.setTransform(1, 0, 0, 1, 0, 0);
     }
   };
 
