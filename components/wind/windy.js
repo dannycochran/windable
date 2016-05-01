@@ -10,6 +10,9 @@
 import {getAnimationFrame, isValue} from '../utilities/functions';
 import {math} from '../utilities/math';
 
+import {webGL} from '../renderers/gl';
+import {canvas} from '../renderers/canvas';
+
 export const Windy = function(windyConfig) {
   // Wind velocity at which particle intensity is maximum (m/s).
   const MAX_WIND_INTENSITY = 30
@@ -34,6 +37,9 @@ export const Windy = function(windyConfig) {
 
   // Reduce particle count to this fraction (improves FPS).
   let particleReduction = 0.1;
+
+  // The context to be used for the canvas.
+  const context = getContext(windyConfig.canvas);
 
   /**
    * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
@@ -236,34 +242,6 @@ export const Windy = function(windyConfig) {
   };
 
   /**
-   * Draws the particles' position to the canvas.
-   */
-  const draw = function(buckets, bounds, context) {
-    // Fade existing particle trails.
-    const prev = context.globalCompositeOperation;
-    context.globalCompositeOperation = "destination-in";
-    context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    context.globalCompositeOperation = prev;
-
-    // Draw new particle trails.
-    buckets.forEach((bucket, i) => {
-      if (bucket.length > 0) {
-        context.beginPath();
-        context.strokeStyle = colorScheme[i];
-
-        bucket.forEach((particle) => {
-          context.moveTo(particle.x, particle.y);
-          context.lineTo(particle.xt, particle.yt);
-          particle.x = particle.xt;
-          particle.y = particle.yt;
-        });
-
-        context.stroke();
-      }
-    });
-  };
-
-  /**
    * Animates the wind visualization.
    */
   const animate = function(bounds, field, numPoints) {
@@ -282,10 +260,8 @@ export const Windy = function(windyConfig) {
       }));
     }
 
-    const context = windyConfig.canvas.getContext('2d');
-    context.lineWidth = particleWidth;
-    context.fillStyle = `rgba(0, 0, 0, ${particleFadeOpacity})`;
     let counter = 0;
+    context.renderer.prepare(context, particleWidth, particleFadeOpacity);
 
     (function frame() {
       try {
@@ -297,7 +273,7 @@ export const Windy = function(windyConfig) {
           }
           getAnimationFrame(frame);
           evolve(buckets, particles, field);
-          draw(buckets, bounds, context);
+          context.renderer.draw(buckets, bounds, context, colorScheme);
         }
       } catch (e) {
         console.error(e);
@@ -369,20 +345,36 @@ export const Windy = function(windyConfig) {
     if (windy.field) windy.field.release();
   };
 
+  /**
+   * Clear the drawing context.
+   */
   const clear = function() {
     if (!windy.mapBounds) return;
-
-    const context = windyConfig.canvas.getContext('2d');
-    context.clearRect(0, 0, windy.mapBounds.width, windy.mapBounds.height);
-
-    if (context.resetTransform) {
-      context.resetTransform();
-    } else {
-      context.setTransform(1, 0, 0, 1, 0, 0);
-    }
+    context.renderer.clear(context, windy.mapBounds);
   }; 
 
   const windy = {};
 
   return {stop: stop, start: start};
+};
+
+
+/** 
+ * Returns the context for a given canvas element or null if unsupported.
+ * @param {!HTMLCanvasElement} canvasEl The canvas upon which to draw.
+ * @return {?WebGLRenderingContext|CanvasRenderingContext2D}
+ */
+export function getContext(canvasEl) {
+  let ctx = null;
+
+  if (canvasEl.getContext) {
+    [['2d', canvas]].forEach(typePair => {
+      if (!ctx) {
+        ctx = canvasEl.getContext(typePair[0]);
+        if (ctx) ctx.renderer = typePair[1];
+      }
+    });
+  }
+
+  return ctx;
 };

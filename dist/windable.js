@@ -5,14 +5,73 @@ var _wind = require('./wind/wind');
 
 window.WindMap = _wind.WindMap;
 
-},{"./wind/wind":5}],2:[function(require,module,exports){
+},{"./wind/wind":7}],2:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var canvas = exports.canvas = {
+  prepare: function prepare(context, particleWidth, particleFadeOpacity) {
+    context.lineWidth = particleWidth;
+    context.fillStyle = "rgba(0, 0, 0, " + particleFadeOpacity + ")";
+  },
+
+  draw: function draw(buckets, bounds, context, colorScheme) {
+    // Fade existing particle trails.
+    var prev = context.globalCompositeOperation;
+    context.globalCompositeOperation = "destination-in";
+    context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    context.globalCompositeOperation = prev;
+
+    // Draw new particle trails.
+    buckets.forEach(function (bucket, i) {
+      if (bucket.length > 0) {
+        context.beginPath();
+        context.strokeStyle = colorScheme[i];
+
+        bucket.forEach(function (particle) {
+          context.moveTo(particle.x, particle.y);
+          context.lineTo(particle.xt, particle.yt);
+          particle.x = particle.xt;
+          particle.y = particle.yt;
+        });
+
+        context.stroke();
+      }
+    });
+  },
+
+  clear: function clear(context, bounds) {
+    context.clearRect(0, 0, bounds.width, bounds.height);
+
+    if (context.resetTransform) {
+      context.resetTransform();
+    } else {
+      context.setTransform(1, 0, 0, 1, 0, 0);
+    }
+  }
+};
+
+},{}],3:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var webGL = exports.webGL = {
+  isWebGL: true,
+  draw: function draw() {},
+  clear: function clear() {}
+};
+
+},{}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.debounce = debounce;
-exports.supportsCanvas = supportsCanvas;
 exports.formatTime = formatTime;
 /**
  * Debounces a function; courtesy of:
@@ -42,13 +101,6 @@ function debounce(func) {
     if (callNow) func.apply(context, args);
   };
 };
-
-/**
- * Checks if the browser supports canvas.
- */
-function supportsCanvas() {
-  return !!document.createElement('canvas').getContext;
-}
 
 /**
  * Formats a milliseconds timestamp to YYYYMMDDHH.
@@ -87,7 +139,7 @@ var isValue = exports.isValue = function isValue(val) {
   return val !== null && val !== undefined;
 };
 
-},{}],3:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -203,7 +255,7 @@ var math = exports.math = {
   rad2deg: rad2deg
 };
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -232,7 +284,7 @@ var palettes = exports.palettes = {
   Greys: ['#ffffff', '#f0f0f0', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000']
 };
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -265,7 +317,7 @@ var WindMap = exports.WindMap = function () {
 
     _classCallCheck(this, WindMap);
 
-    if (!(0, _functions.supportsCanvas)()) {
+    if (!(0, _windy.getContext)(config.canvas)) {
       throw new Error('Browser does not support canvas.');
     }
 
@@ -331,17 +383,22 @@ var WindMap = exports.WindMap = function () {
   return WindMap;
 }();
 
-},{"../utilities/functions":2,"../utilities/palettes":4,"./windy":6}],6:[function(require,module,exports){
+},{"../utilities/functions":4,"../utilities/palettes":6,"./windy":8}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.Windy = undefined;
+exports.getContext = getContext;
 
 var _functions = require('../utilities/functions');
 
 var _math = require('../utilities/math');
+
+var _gl = require('../renderers/gl');
+
+var _canvas = require('../renderers/canvas');
 
 /**
  * A modified version of Esri's Windy.JS, which itself draws heavily from
@@ -376,6 +433,9 @@ var Windy = exports.Windy = function Windy(windyConfig) {
 
   // Reduce particle count to this fraction (improves FPS).
   var particleReduction = 0.1;
+
+  // The context to be used for the canvas.
+  var context = getContext(windyConfig.canvas);
 
   /**
    * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
@@ -584,34 +644,6 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   };
 
   /**
-   * Draws the particles' position to the canvas.
-   */
-  var draw = function draw(buckets, bounds, context) {
-    // Fade existing particle trails.
-    var prev = context.globalCompositeOperation;
-    context.globalCompositeOperation = "destination-in";
-    context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    context.globalCompositeOperation = prev;
-
-    // Draw new particle trails.
-    buckets.forEach(function (bucket, i) {
-      if (bucket.length > 0) {
-        context.beginPath();
-        context.strokeStyle = colorScheme[i];
-
-        bucket.forEach(function (particle) {
-          context.moveTo(particle.x, particle.y);
-          context.lineTo(particle.xt, particle.yt);
-          particle.x = particle.xt;
-          particle.y = particle.yt;
-        });
-
-        context.stroke();
-      }
-    });
-  };
-
-  /**
    * Animates the wind visualization.
    */
   var animate = function animate(bounds, field, numPoints) {
@@ -630,10 +662,8 @@ var Windy = exports.Windy = function Windy(windyConfig) {
       }));
     }
 
-    var context = windyConfig.canvas.getContext('2d');
-    context.lineWidth = particleWidth;
-    context.fillStyle = 'rgba(0, 0, 0, ' + particleFadeOpacity + ')';
     var counter = 0;
+    context.renderer.prepare(context, particleWidth, particleFadeOpacity);
 
     (function frame() {
       try {
@@ -645,7 +675,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
           }
           (0, _functions.getAnimationFrame)(frame);
           evolve(buckets, particles, field);
-          draw(buckets, bounds, context);
+          context.renderer.draw(buckets, bounds, context, colorScheme);
         }
       } catch (e) {
         console.error(e);
@@ -714,17 +744,12 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     if (windy.field) windy.field.release();
   };
 
+  /**
+   * Clear the drawing context.
+   */
   var clear = function clear() {
     if (!windy.mapBounds) return;
-
-    var context = windyConfig.canvas.getContext('2d');
-    context.clearRect(0, 0, windy.mapBounds.width, windy.mapBounds.height);
-
-    if (context.resetTransform) {
-      context.resetTransform();
-    } else {
-      context.setTransform(1, 0, 0, 1, 0, 0);
-    }
+    context.renderer.clear(context, windy.mapBounds);
   };
 
   var windy = {};
@@ -732,4 +757,24 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   return { stop: stop, start: start };
 };
 
-},{"../utilities/functions":2,"../utilities/math":3}]},{},[1]);
+/** 
+ * Returns the context for a given canvas element or null if unsupported.
+ * @param {!HTMLCanvasElement} canvasEl The canvas upon which to draw.
+ * @return {?WebGLRenderingContext|CanvasRenderingContext2D}
+ */
+function getContext(canvasEl) {
+  var ctx = null;
+
+  if (canvasEl.getContext) {
+    [['2d', _canvas.canvas]].forEach(function (typePair) {
+      if (!ctx) {
+        ctx = canvasEl.getContext(typePair[0]);
+        if (ctx) ctx.renderer = typePair[1];
+      }
+    });
+  }
+
+  return ctx;
+};
+
+},{"../renderers/canvas":2,"../renderers/gl":3,"../utilities/functions":4,"../utilities/math":5}]},{},[1]);

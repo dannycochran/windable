@@ -26,14 +26,6 @@ export function debounce(func, wait=100, immediate=false) {
 
 
 /**
- * Checks if the browser supports canvas.
- */
-export function supportsCanvas() {
-  return !!document.createElement('canvas').getContext;
-}
-
-
-/**
  * Formats a milliseconds timestamp to YYYYMMDDHH.
  * @param {!Date} date A Date object.
  * @return {string} A string in the format of 'YYYYMMDDHH'.

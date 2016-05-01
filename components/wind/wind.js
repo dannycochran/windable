@@ -2,12 +2,12 @@
  * A light controller class for using a modified version of Esri's Windy.JS.
  */
 
-import {
-  debounce,
-  supportsCanvas
-} from '../utilities/functions';
+import {debounce} from '../utilities/functions';
 import {palettes} from '../utilities/palettes';
-import {Windy} from './windy';
+import {
+  Windy,
+  getContext
+} from './windy';
 
 export class WindMap {
   /**
@@ -17,7 +17,7 @@ export class WindMap {
    * @param {!ConfigPayload} config An instance of ConfigPayload.
    */
   constructor(config) {
-    if (!supportsCanvas()) {
+    if (!getContext(config.canvas)) {
       throw new Error('Browser does not support canvas.');
     }
 
