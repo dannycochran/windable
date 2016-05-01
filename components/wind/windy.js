@@ -17,9 +17,6 @@ export const Windy = function(windyConfig) {
   // Max number of frames a particle is drawn before regeneration.
   const MAX_PARTICLE_AGE = 100;
 
-  // Particle count scalar (completely arbitrary--this values looks nice).
-  const PARTICLE_MULTIPLIER = 8;
-
   // Singleton for no wind in the form: [u, v, magnitude].
   const NULL_WIND_VECTOR = [NaN, NaN, null];
 
@@ -36,7 +33,7 @@ export const Windy = function(windyConfig) {
   let particleWidth = 2;
 
   // Reduce particle count to this fraction (improves FPS).
-  let particleReduction = 0.75;
+  let particleReduction = 0.1;
 
   /**
    * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
@@ -146,17 +143,11 @@ export const Windy = function(windyConfig) {
     field.release = () => { columns = []; };
 
     // UNDONE: this method is terrible
-    field.randomize = function(o) {
-      let x;
-      let y;
-      let safetyNet = 0;
-      do {
-        x = Math.round(Math.floor(Math.random() * bounds.width) + bounds.x);
-        y = Math.round(Math.floor(Math.random() * bounds.height) + bounds.y);
-      } while (field(x, y)[2] === null && safetyNet++ < 30);
-      o.x = x;
-      o.y = y;
-      return o;
+    field.randomize = (particle) => {
+      return Object.assign(particle, {
+        x: Math.round(Math.floor(Math.random() * bounds.width) + bounds.x),
+        y: Math.round(Math.floor(Math.random() * bounds.height) + bounds.y)
+      });
     };
 
     return field;
@@ -275,7 +266,7 @@ export const Windy = function(windyConfig) {
   /**
    * Animates the wind visualization.
    */
-  const animate = function(bounds, field) {
+  const animate = function(bounds, field, numPoints) {
     colorScheme.indexFor = function(m) {  // map wind speed to a style
       const len = colorScheme.length - 1;
       return Math.floor(
@@ -283,12 +274,11 @@ export const Windy = function(windyConfig) {
     };
 
     const buckets = colorScheme.map(Array);
-    const particleCount = Math.round(bounds.width * PARTICLE_MULTIPLIER) * particleReduction;
-
+    const particleCount = numPoints * particleReduction
     const particles = [];
     for (let i = 0; i < particleCount; i++) {
       particles.push(field.randomize({
-        age: Math.floor(Math.random() * MAX_PARTICLE_AGE) + 0
+        age: Math.floor(Math.random() * MAX_PARTICLE_AGE)
       }));
     }
 
@@ -367,7 +357,7 @@ export const Windy = function(windyConfig) {
     windy.mapBounds = mapBounds;
 
     windy.stop = false;
-    animate(builtBounds, windy.field);
+    animate(builtBounds, windy.field, config.data[0].data.length);
   };
 
   /**

@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Wind Animation Google Maps</title>
 
-    <script src="./../../dist/windable.min.js" defer></script>
+    <script src="./../../dist/windable.js" defer></script>
 
     <script src="https://maps.googleapis.com/maps/api/js?v=3.24" defer></script>
     <script src="https://google-maps-utility-library-v3.googlecode.com/svn-history/r377/trunk/canvaslayer/src/CanvasLayer.js" defer></script>
@@ -66,7 +66,7 @@
 
     <div id="particles-menu">
       <label>Particle Reduction</label>
-      <input id="particles-range" type="range" value="75" step="1">
+      <input id="particles-range" type="range" min="0.01" max="0.2" value="0.1" step="0.01">
     </div>
 
     <div id="speed-menu">
@@ -143,8 +143,7 @@
         };
 
         const onChangeParticleCount = function(e) {
-          const value = Math.max(Number(e.currentTarget.value) / 100, 0.01);
-          windMap.update({particleReduction: value});
+          windMap.update({particleReduction: parseFloat(e.currentTarget.value)});
         };
 
         const onChangeParticleSpeed = function(e) {

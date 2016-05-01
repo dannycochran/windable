@@ -359,9 +359,6 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   // Max number of frames a particle is drawn before regeneration.
   var MAX_PARTICLE_AGE = 100;
 
-  // Particle count scalar (completely arbitrary--this values looks nice).
-  var PARTICLE_MULTIPLIER = 8;
-
   // Singleton for no wind in the form: [u, v, magnitude].
   var NULL_WIND_VECTOR = [NaN, NaN, null];
 
@@ -378,7 +375,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   var particleWidth = 2;
 
   // Reduce particle count to this fraction (improves FPS).
-  var particleReduction = 0.75;
+  var particleReduction = 0.1;
 
   /**
    * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
@@ -492,17 +489,11 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     };
 
     // UNDONE: this method is terrible
-    field.randomize = function (o) {
-      var x = void 0;
-      var y = void 0;
-      var safetyNet = 0;
-      do {
-        x = Math.round(Math.floor(Math.random() * bounds.width) + bounds.x);
-        y = Math.round(Math.floor(Math.random() * bounds.height) + bounds.y);
-      } while (field(x, y)[2] === null && safetyNet++ < 30);
-      o.x = x;
-      o.y = y;
-      return o;
+    field.randomize = function (particle) {
+      return Object.assign(particle, {
+        x: Math.round(Math.floor(Math.random() * bounds.width) + bounds.x),
+        y: Math.round(Math.floor(Math.random() * bounds.height) + bounds.y)
+      });
     };
 
     return field;
@@ -623,7 +614,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
   /**
    * Animates the wind visualization.
    */
-  var animate = function animate(bounds, field) {
+  var animate = function animate(bounds, field, numPoints) {
     colorScheme.indexFor = function (m) {
       // map wind speed to a style
       var len = colorScheme.length - 1;
@@ -631,12 +622,11 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     };
 
     var buckets = colorScheme.map(Array);
-    var particleCount = Math.round(bounds.width * PARTICLE_MULTIPLIER) * particleReduction;
-
+    var particleCount = numPoints * particleReduction;
     var particles = [];
     for (var i = 0; i < particleCount; i++) {
       particles.push(field.randomize({
-        age: Math.floor(Math.random() * MAX_PARTICLE_AGE) + 0
+        age: Math.floor(Math.random() * MAX_PARTICLE_AGE)
       }));
     }
 
@@ -712,7 +702,7 @@ var Windy = exports.Windy = function Windy(windyConfig) {
     windy.mapBounds = mapBounds;
 
     windy.stop = false;
-    animate(builtBounds, windy.field);
+    animate(builtBounds, windy.field, config.data[0].data.length);
   };
 
   /**
