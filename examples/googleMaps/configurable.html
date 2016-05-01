@@ -122,7 +122,8 @@
         altitudeMenu.selectedIndex = levels.indexOf(selected);
 
         // Colors menu.
-        const colors = Object.keys(windMap.palettes);
+        const palettes = windMap.renderer.palettes;
+        const colors = Object.keys(palettes);
         colors.forEach(palette => {
           const select = document.createElement('option');
           select.innerHTML = palette;
@@ -133,7 +134,7 @@
         // Event handlers.
         const onSelectColor = function(e) {
           const selectedIndex = colorsMenu.selectedIndex;
-          windMap.update({colorScheme: windMap.palettes[colors[selectedIndex]]});
+          windMap.update({colorScheme: palettes[colors[selectedIndex]]});
         };
 
         const onSelectAltitude = function(e) {

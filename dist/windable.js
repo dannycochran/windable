@@ -5,67 +5,684 @@ var _wind = require('./wind/wind');
 
 window.WindMap = _wind.WindMap;
 
-},{"./wind/wind":7}],2:[function(require,module,exports){
+},{"./wind/wind":9}],2:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var canvas = exports.canvas = {
-  prepare: function prepare(context, particleWidth, particleFadeOpacity) {
-    context.lineWidth = particleWidth;
-    context.fillStyle = "rgba(0, 0, 0, " + particleFadeOpacity + ")";
-  },
+exports.CanvasRenderer = undefined;
 
-  draw: function draw(buckets, bounds, context, colorScheme) {
-    // Fade existing particle trails.
-    var prev = context.globalCompositeOperation;
-    context.globalCompositeOperation = "destination-in";
-    context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    context.globalCompositeOperation = prev;
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-    // Draw new particle trails.
-    buckets.forEach(function (bucket, i) {
-      if (bucket.length > 0) {
-        context.beginPath();
-        context.strokeStyle = colorScheme[i];
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
 
-        bucket.forEach(function (particle) {
-          context.moveTo(particle.x, particle.y);
-          context.lineTo(particle.xt, particle.yt);
-          particle.x = particle.xt;
-          particle.y = particle.yt;
-        });
+var _renderer = require("./../renderer");
 
-        context.stroke();
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var CanvasRenderer = exports.CanvasRenderer = function (_Renderer) {
+  _inherits(CanvasRenderer, _Renderer);
+
+  function CanvasRenderer() {
+    _classCallCheck(this, CanvasRenderer);
+
+    return _possibleConstructorReturn(this, Object.getPrototypeOf(CanvasRenderer).apply(this, arguments));
+  }
+
+  _createClass(CanvasRenderer, [{
+    key: "prepare_",
+    value: function prepare_() {
+      this.context.lineWidth = this.config_.particleWidth;
+      this.context.fillStyle = "rgba(0, 0, 0, " + this.config_.particleFadeOpacity + ")";
+
+      return this;
+    }
+  }, {
+    key: "draw_",
+    value: function draw_(buckets, bounds) {
+      var _this2 = this;
+
+      // Fade existing particle trails.
+      var prev = this.context.globalCompositeOperation;
+      this.context.globalCompositeOperation = "destination-in";
+      this.context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
+      this.context.globalCompositeOperation = prev;
+
+      // Draw new particle trails.
+      buckets.forEach(function (bucket, i) {
+        if (bucket.length > 0) {
+          _this2.context.beginPath();
+          _this2.context.strokeStyle = _this2.config_.colorScheme[i];
+
+          bucket.forEach(function (particle) {
+            _this2.context.moveTo(particle.x, particle.y);
+            _this2.context.lineTo(particle.xt, particle.yt);
+            particle.x = particle.xt;
+            particle.y = particle.yt;
+          });
+
+          _this2.context.stroke();
+        }
+      });
+
+      return this;
+    }
+  }, {
+    key: "clear_",
+    value: function clear_() {
+      _get(Object.getPrototypeOf(CanvasRenderer.prototype), "clear_", this).call(this);
+      if (!this.mapBounds_) return;
+
+      this.context.clearRect(0, 0, this.mapBounds_.width, this.mapBounds_.height);
+
+      if (this.context.resetTransform) {
+        this.context.resetTransform();
+      } else {
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
       }
+
+      return this;
+    }
+  }]);
+
+  return CanvasRenderer;
+}(_renderer.Renderer);
+
+;
+
+},{"./../renderer":5}],3:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.WebGLRenderer = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _shaders = require('./shaders');
+
+var _renderer = require('./../renderer');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
+  _inherits(WebGLRenderer, _Renderer);
+
+  function WebGLRenderer(canvas, extent) {
+    _classCallCheck(this, WebGLRenderer);
+
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WebGLRenderer).call(this, canvas, extent));
+
+    canvas.addEventListener('webglcontextlost', function (e) {
+      return _this.onContextLost_(e);
     });
-  },
+    canvas.addEventListener('webglcontextrestored', function (e) {
+      return _this.onContextRestored_(e);
+    });
+    return _this;
+  }
 
-  clear: function clear(context, bounds) {
-    context.clearRect(0, 0, bounds.width, bounds.height);
+  _createClass(WebGLRenderer, [{
+    key: 'prepare_',
+    value: function prepare_() {
+      return this.resize_();
+    }
+  }, {
+    key: 'draw_',
+    value: function draw_(buckets, bounds) {
+      return this;
+    }
+  }, {
+    key: 'clear_',
+    value: function clear_() {
+      _get(Object.getPrototypeOf(WebGLRenderer.prototype), 'clear_', this).call(this);
+      if (!this.mapBounds_) return;
 
-    if (context.resetTransform) {
-      context.resetTransform();
-    } else {
-      context.setTransform(1, 0, 0, 1, 0, 0);
+      this.context.clear(this.context.COLOR_BUFFER_BIT);
+      return this.resize_();
+    }
+  }, {
+    key: 'resize_',
+    value: function resize_(context) {
+      this.context.viewport(0, 0, this.context.drawingBufferWidth, this.context.drawingBufferHeight);
+      return this;
+    }
+  }, {
+    key: 'onContextLost_',
+    value: function onContextLost_(e) {
+      e.preventDefault();
+      this.stopped_ = true;
+      this.clear_();
+    }
+  }, {
+    key: 'onContextRestored_',
+    value: function onContextRestored_(e) {
+      this.clear_().start_();
+    }
+  }]);
+
+  return WebGLRenderer;
+}(_renderer.Renderer);
+
+;
+
+},{"./../renderer":5,"./shaders":4}],4:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var frag = exports.frag = ' \
+  precision mediump float; \
+  varying vec4 rgba; \
+  void main() { \
+    gl_FragColor = rgba; \
+  }';
+
+var vert = exports.vert = ' \
+  uniform vec2 u_resolution; \
+  attribute vec2 a_position; \
+  attribute vec4 a_rgba; \
+  varying vec4 rgba; \
+  void main() { \
+    vec2 clipspace = a_position / u_resolution * 2.0 - 1.0; \
+    gl_Position = vec4(clipspace * vec2(1, -1), 0, 1); \
+    rgba = a_rgba / 255.0; \
+  }';
+
+},{}],5:[function(require,module,exports){
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Renderer = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /**
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * A modified version of Esri's Windy.JS, which itself draws heavily from
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * Earth.nullschool's original implementation. Much of the logic from
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * those original libraries is untouched; the updates are mostly aesthetic.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      *
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * https://github.com/Esri/wind-js (MIT License)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      * https://github.com/cambecc/earth (MIT License)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      */
+
+exports.getContextType = getContextType;
+
+var _functions = require('./../utilities/functions');
+
+var _math = require('./../utilities/math');
+
+var _palettes = require('./../utilities/palettes');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+// Wind velocity at which particle intensity is maximum (m/s).
+var MAX_WIND_INTENSITY = 30;
+
+// Max number of frames a particle is drawn before regeneration.
+var MAX_PARTICLE_AGE = 100;
+
+// Singleton for no wind in the form: [u, v, magnitude].
+var NULL_WIND_VECTOR = [NaN, NaN, null];
+
+var Renderer = exports.Renderer = function () {
+  function Renderer(canvas, extent) {
+    _classCallCheck(this, Renderer);
+
+    // Canvas element.
+    this.canvas = canvas;
+
+    // Returns map boundaries extent.
+    this.extent = extent;
+
+    // Some default palettes.
+    this.palettes = _palettes.palettes;
+
+    // A reference to the last used data source.
+    this.data_ = null;
+
+    // Boolean indicating if animation frame should continue.
+    this.stopped_ = true;
+
+    // The particle field.
+    this.field_ = null;
+
+    // The map boundaries.
+    this.mapBounds_ = null;
+
+    // Configurable fields for the user.
+    this.config_ = {
+      // An array of color hex codes.
+      colorScheme: _palettes.palettes.Purples,
+      // The lower this is, the faster the particles disappear from the screen.
+      particleFadeOpacity: 0.97,
+      // Scale for wind velocity (Arbitrary; smaller values reduce velocity).
+      velocityScale: 1 / 200000,
+      // Line width of a drawn particle.
+      particleWidth: 2,
+      // Reduce particle count to this fraction (improves FPS).
+      particleReduction: 0.1
+    };
+
+    // Determine the context type.
+    var contextType = getContextType(canvas);
+    if (contextType) {
+      this.context = canvas.getContext(contextType);
+    } else if (canvas) {
+      throw new Error('Browser does not support canvas.');
+    } else if (!canvas) {
+      throw new Error('Must provide an HTMLCanvasElement.');
+    } else if (!extent) {
+      throw new Error('Must provide an extent function.');
     }
   }
+
+  /**
+   * Updates the wind animation with new configurations.
+   * @param {!ConfigPayload} A ConfigPayload instance. 
+   */
+
+
+  _createClass(Renderer, [{
+    key: 'start',
+    value: function start(config) {
+      var extent = this.extent();
+
+      var width = extent.width;
+      var height = extent.height;
+      var bounds = extent.cropBounds || [[0, 0], [width, height]];
+
+      this.canvas.width = width;
+      this.canvas.height = height;
+      this.canvas.style.width = width + 'px';
+      this.canvas.style.height = height + 'px';
+
+      this.mapBounds_ = {
+        south: _math.math.deg2rad(extent.latlng[0][1]),
+        north: _math.math.deg2rad(extent.latlng[1][1]),
+        east: _math.math.deg2rad(extent.latlng[1][0]),
+        west: _math.math.deg2rad(extent.latlng[0][0]),
+        width: width,
+        height: height
+      };
+      this.data_ = config.data || this.data_;
+
+      // Do not animate if map repeats across x-axis.
+      // @TODO (dannycochran) Figure out how to continuously display wind across
+      // repeating map layout.
+      if (this.mapBounds_.west - this.mapBounds_.east > 0 || Math.abs(this.mapBounds_.west) - Math.abs(this.mapBounds_.east) === 0 || !this.data_) {
+        if (config.boundsExceededCallback) {
+          config.boundsExceededCallback(this.mapBounds_);
+        }
+        return;
+      }
+
+      // Optional configurations.
+      this.config_.colorScheme = config.colorScheme || this.config_.colorScheme;
+      this.config_.velocityScale = config.velocityScale || this.config_.velocityScale;
+      this.config_.particleWidth = config.particleWidth || this.config_.particleWidth;
+      this.config_.particleFadeOpacity = config.particleFadeOpacity || this.config_.particleFadeOpacity;
+      this.config_.particleReduction = config.particleReduction || this.config_.particleReduction;
+
+      // Build grid.
+      var grid = this.buildGrid_(this.data_);
+      var builtBounds = this.buildBounds_(bounds, width, height);
+
+      this.field_ = this.interpolateField_(grid, builtBounds, this.mapBounds_);
+
+      this.stopped_ = false;
+      return this.animate_(builtBounds, this.data_[0].data.length);
+    }
+
+    /**
+     * Stops and clears the wind animation.
+     */
+
+  }, {
+    key: 'stop',
+    value: function stop() {
+      this.clear_();
+      this.stopped_ = true;
+      if (this.field_) this.field_.release();
+
+      return this;
+    }
+
+    /**
+     * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
+     * is 1x1.
+     * 
+     * @param {!WindData} windData An instance of WindData.
+     * @return {!Function} A function to interpolate the wind points on the grid.
+     */
+
+  }, {
+    key: 'buildGrid_',
+    value: function buildGrid_(windData) {
+      var uComp = windData[0];
+      var vComp = windData[1];
+
+      // Returns an x,y coordinate pair from uComp and vComp.
+      var getDataPoint = function getDataPoint(i) {
+        return [uComp.data[i], vComp.data[i]];
+      };
+
+      // The grid's origin (e.g., 0.0E, 90.0N)
+      var λ0 = uComp.header.lo1;
+      var φ0 = uComp.header.la1;
+
+      // Distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat).
+      var Δλ = uComp.header.dx;
+      var Δφ = uComp.header.dy;
+
+      // Number of grid points W-E and N-S (e.g., 144 x 73).
+      var ni = uComp.header.nx;
+      var nj = uComp.header.ny;
+
+      // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases
+      // from φ0:
+      // http://www.nco.ncep.noaa.gov/pmb/docs/grib2/grib2_table3-4.shtml
+      var grid = [];
+      var isContinuous = Math.floor(ni * Δλ) >= 360;
+      var p = 0;
+
+      for (var j = 0; j < nj; j++) {
+        var row = [];
+        for (var i = 0; i < ni; i++, p++) {
+          row[i] = getDataPoint(p);
+        }
+
+        // For wrapped grids, duplicate first column as last column to simplify
+        // interpolation logic.
+        if (isContinuous) {
+          row.push(row[0]);
+        }
+
+        grid[j] = row;
+      }
+
+      return function (λ, φ) {
+        // Calculate longitude index in wrapped range [0, 360).
+        var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
+
+        // Calculate latitude index in direction +90 to -90.
+        var j = (φ0 - φ) / Δφ;
+        var fi = Math.floor(i);
+        var ci = fi + 1;
+        var fj = Math.floor(j);
+        var cj = fj + 1;
+
+        var row = void 0;
+        if (row = grid[fj]) {
+          var g00 = row[fi];
+          var g10 = row[ci];
+          if ((0, _functions.isValue)(g00) && (0, _functions.isValue)(g10) && (row = grid[cj])) {
+            var g01 = row[fi];
+            var g11 = row[ci];
+            if ((0, _functions.isValue)(g01) && (0, _functions.isValue)(g11)) {
+              // All four points found, so interpolate the value.
+              return _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
+            }
+          }
+        }
+        return null;
+      };
+    }
+
+    /**
+     * Calculate distortion of the wind vector caused by the shape of the
+     * projection at point (x, y). The wind vector is modified in place and
+     * returned by this function.
+     */
+
+  }, {
+    key: 'distort_',
+    value: function distort_(λ, φ, x, y, scale, wind) {
+      var u = wind[0] * scale;
+      var v = wind[1] * scale;
+      var d = _math.math.distortion(λ, φ, x, y, this.mapBounds_);
+
+      // Scale distortion vectors by u and v, then add.
+      wind[0] = d[0] * u + d[2] * v;
+      wind[1] = d[1] * u + d[3] * v;
+
+      return wind;
+    }
+  }, {
+    key: 'createField_',
+    value: function createField_(columns, bounds) {
+      /**
+       * @returns {Array} wind vector [u, v, magnitude] at the point (x, y).
+       */
+      function field(x, y) {
+        var column = columns[Math.round(x)];
+        return column && column[Math.round(y)] || NULL_WIND_VECTOR;
+      }
+
+      // Frees the massive "columns" array for GC. Without this, the array is
+      // leaked (in Chrome) each time a new field is interpolated because the
+      // field closure's context is leaked, for reasons that defy explanation.
+      field.release = function () {
+        columns = [];
+      };
+
+      // UNDONE: this method is terrible
+      field.randomize = function (particle) {
+        return Object.assign(particle, {
+          x: Math.round(Math.floor(Math.random() * bounds.width) + bounds.x),
+          y: Math.round(Math.floor(Math.random() * bounds.height) + bounds.y)
+        });
+      };
+
+      return field;
+    }
+  }, {
+    key: 'buildBounds_',
+    value: function buildBounds_(bounds, width, height) {
+      var upperLeft = bounds[0];
+      var lowerRight = bounds[1];
+      var x = Math.round(upperLeft[0]);
+      var y = Math.max(Math.floor(upperLeft[1], 0), 0);
+      var xMax = Math.min(Math.ceil(lowerRight[0], width), width - 1);
+      var yMax = Math.min(Math.ceil(lowerRight[1], height), height - 1);
+      return { x: x, y: y, xMax: width, yMax: yMax, width: width, height: height };
+    }
+  }, {
+    key: 'interpolateField_',
+    value: function interpolateField_(grid, bounds) {
+      var _this = this;
+
+      var velocity = bounds.height * this.config_.velocityScale;
+
+      var x = bounds.x;
+      var columns = [];
+
+      var interpolateColumn = function interpolateColumn(x) {
+        var column = [];
+        for (var y = bounds.y; y <= bounds.yMax; y += 2) {
+          var coord = _math.math.invert(x, y, _this.mapBounds_);
+
+          if (coord) {
+            var λ = coord[0];
+            var φ = coord[1];
+
+            if (isFinite(λ)) {
+              var wind = grid(λ, φ);
+
+              if (wind) {
+                wind = _this.distort_(λ, φ, x, y, velocity, wind);
+                column[y + 1] = column[y] = wind;
+              }
+            }
+          }
+        }
+        columns[x + 1] = columns[x] = column;
+      };
+
+      while (x < bounds.width) {
+        interpolateColumn(x);
+        x += 2;
+      }
+
+      return this.createField_(columns, bounds);
+    }
+
+    /**
+     * Moves the wind particles.
+     */
+
+  }, {
+    key: 'evolve_',
+    value: function evolve_(buckets, particles) {
+      var _this2 = this;
+
+      buckets.forEach(function (bucket) {
+        bucket.length = 0;
+      });
+
+      particles.forEach(function (particle) {
+        if (particle.age > MAX_PARTICLE_AGE) {
+          _this2.field_.randomize(particle).age = 0;
+        }
+
+        // Vector at current position.
+        var vector = _this2.field_(particle.x, particle.y);
+
+        if (vector[2] === null) {
+          // Particle has escaped the grid, never to return.
+          particle.age = MAX_PARTICLE_AGE;
+        } else {
+          var xt = particle.x + vector[0];
+          var yt = particle.y + vector[1];
+
+          if (_this2.field_(xt, yt)[2] !== null) {
+            // Path from (x,y) to (xt,yt) is visible, so add this particle to
+            // the appropriate draw bucket.
+            particle.xt = xt;
+            particle.yt = yt;
+            buckets[_this2.config_.colorScheme.indexFor(vector[2])].push(particle);
+          } else {
+            // Particle isn't visible, but it still moves through the field.
+            particle.x = xt;
+            particle.y = yt;
+          }
+        }
+        particle.age += 1;
+      });
+    }
+
+    /**
+     * Animates the wind visualization.
+     */
+
+  }, {
+    key: 'animate_',
+    value: function animate_(bounds, numPoints) {
+      var _this3 = this;
+
+      this.config_.colorScheme.indexFor = function (m) {
+        // map wind speed to a style
+        var length = _this3.config_.colorScheme.length - 1;
+        return Math.floor(Math.min(m, MAX_WIND_INTENSITY) / MAX_WIND_INTENSITY * length);
+      };
+
+      var buckets = this.config_.colorScheme.map(Array);
+      var particleCount = numPoints * this.config_.particleReduction;
+      var particles = [];
+      for (var i = 0; i < particleCount; i++) {
+        particles.push(this.field_.randomize({
+          age: Math.floor(Math.random() * MAX_PARTICLE_AGE)
+        }));
+      }
+
+      var counter = 0;
+      this.prepare_();
+
+      var frame = function frame() {
+        try {
+          if (!_this3.stopped_) {
+            counter += 1;
+            if (counter >= 1000) {
+              counter = 0;
+              _this3.clear_();
+            }
+            _this3.currentFrame_ = (0, _functions.getAnimationFrame)(frame);
+            _this3.evolve_(buckets, particles);
+            _this3.draw_(buckets, bounds);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      frame();
+    }
+
+    /**
+     * Clear the drawing context. Implementation specific to renderer.
+     */
+
+  }, {
+    key: 'clear_',
+    value: function clear_() {
+      if (this.currentFrame_) cancelAnimationFrame(this.currentFrame_);
+      return this;
+    }
+
+    /**
+     * Prepare the drawing context. Implementation specific to renderer.
+     */
+
+  }, {
+    key: 'prepare_',
+    value: function prepare_() {
+      return this;
+    }
+
+    /**
+     * Draw the drawing context. Implementation specific to renderer.
+     */
+
+  }, {
+    key: 'draw_',
+    value: function draw_() {
+      return this;
+    }
+  }]);
+
+  return Renderer;
+}();
+
+;
+
+function getContextType(canvas) {
+  var contextType = null;
+  var _arr = ['webgl', 'webgl-experimental', '2d'];
+  for (var _i = 0; _i < _arr.length; _i++) {
+    var type = _arr[_i];
+    if (canvas.getContext(type)) {
+      contextType = type;
+      break;
+    }
+  }
+
+  return contextType;
 };
 
-},{}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var webGL = exports.webGL = {
-  isWebGL: true,
-  draw: function draw() {},
-  clear: function clear() {}
-};
-
-},{}],4:[function(require,module,exports){
+},{"./../utilities/functions":6,"./../utilities/math":7,"./../utilities/palettes":8}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -139,7 +756,7 @@ var isValue = exports.isValue = function isValue(val) {
   return val !== null && val !== undefined;
 };
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -255,7 +872,7 @@ var math = exports.math = {
   rad2deg: rad2deg
 };
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -284,7 +901,7 @@ var palettes = exports.palettes = {
   Greys: ['#ffffff', '#f0f0f0', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000']
 };
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -298,9 +915,11 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _functions = require('../utilities/functions');
 
-var _palettes = require('../utilities/palettes');
+var _renderer = require('./../renderers/renderer');
 
-var _windy = require('./windy');
+var _gl = require('./../renderers/gl/gl');
+
+var _canvas = require('./../renderers/canvas/canvas');
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -317,43 +936,49 @@ var WindMap = exports.WindMap = function () {
 
     _classCallCheck(this, WindMap);
 
-    if (!(0, _windy.getContext)(config.canvas)) {
-      throw new Error('Browser does not support canvas.');
+    var contextType = (0, _renderer.getContextType)(config.canvas);
+    if (contextType.indexOf('webgl') > -1) {
+      this.renderer = new _gl.WebGLRenderer(config.canvas, config.extent);
+    } else if (contextType === '2d') {
+      this.renderer = new _canvas.CanvasRenderer(config.canvas, config.extent);
     }
 
-    // Required configuration fields.
-    this.config_ = {
-      canvas: config.canvas,
-      extent: config.extent,
-      data: config.data,
-      colorScheme: config.colorScheme || _palettes.palettes.Purples
-    };
-
-    this.palettes = _palettes.palettes;
-    this.windy_ = new _windy.Windy({ canvas: config.canvas });
-    this.startWindy_ = (0, _functions.debounce)(function () {
-      _this.windy_.start(_this.config_);
+    this.startRenderer_ = (0, _functions.debounce)(function (config) {
+      _this.renderer.start(config);
     });
-
-    this.update(config);
   }
+
+  /**
+   * Stop the WindMap animation.
+   * @return {!WindMap} The windmap instance.
+   */
+
 
   _createClass(WindMap, [{
     key: 'stop',
     value: function stop() {
-      this.windy_.stop();
+      this.renderer.stop();
       return this;
     }
+
+    /**
+     * Start the WindMap animation.
+     * @param {!ConfigPayload=} config An instance of ConfigPayload.
+     * @return {!WindMap} The windmap instance.
+     */
+
   }, {
     key: 'start',
     value: function start() {
-      this.startWindy_();
+      var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+      this.startRenderer_(config);
       return this;
     }
 
     /**
      * Update the WindMap data and its optional configurations.
-     * @param {!Object} config Extends the existing ConfigPayload for this class.
+     * @param {!ConfigPayload=} config An instance of ConfigPayload.
      * @return {!WindMap} The windmap instance.
      */
 
@@ -362,419 +987,13 @@ var WindMap = exports.WindMap = function () {
     value: function update() {
       var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
-      this.stop();
-
-      // Optional configuration fields. These all have default values in Windy.
-      Object.assign(this.config_, {
-        colorScheme: config.colorScheme || this.config_.colorScheme,
-        velocityScale: config.velocityScale || this.config_.velocityScale,
-        particleWidth: config.particleWidth || this.config_.particleWidth,
-        particleFadeOpacity: config.particleFadeOpacity || this.config_.particleFadeOpacity,
-        particleReduction: config.particleReduction || this.config_.particleReduction
-      });
-
-      // Update the wind data if it exists.
-      this.config_.data = config.data || this.config_.data;
-
-      return this.start();
+      return this.stop().start(config);
     }
   }]);
 
   return WindMap;
 }();
 
-},{"../utilities/functions":4,"../utilities/palettes":6,"./windy":8}],8:[function(require,module,exports){
-'use strict';
+;
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Windy = undefined;
-exports.getContext = getContext;
-
-var _functions = require('../utilities/functions');
-
-var _math = require('../utilities/math');
-
-var _gl = require('../renderers/gl');
-
-var _canvas = require('../renderers/canvas');
-
-/**
- * A modified version of Esri's Windy.JS, which itself draws heavily from
- * Earth.nullschool's original implementation. Much of the logic from
- * those original libraries is untouched; the updates are mostly aesthetic.
- *
- * https://github.com/Esri/wind-js (MIT License)
- * https://github.com/cambecc/earth (MIT License)
- */
-
-var Windy = exports.Windy = function Windy(windyConfig) {
-  // Wind velocity at which particle intensity is maximum (m/s).
-  var MAX_WIND_INTENSITY = 30;
-
-  // Max number of frames a particle is drawn before regeneration.
-  var MAX_PARTICLE_AGE = 100;
-
-  // Singleton for no wind in the form: [u, v, magnitude].
-  var NULL_WIND_VECTOR = [NaN, NaN, null];
-
-  // Color scheme can be defined by user.
-  var colorScheme = [];
-
-  // The lower this is, the faster the particles disappear from the screen.
-  var particleFadeOpacity = 0.97;
-
-  // Scale for wind velocity (Arbitrary; smaller values reduce velocity).
-  var velocityScale = 1 / 200000;
-
-  // Line width of a drawn particle.
-  var particleWidth = 2;
-
-  // Reduce particle count to this fraction (improves FPS).
-  var particleReduction = 0.1;
-
-  // The context to be used for the canvas.
-  var context = getContext(windyConfig.canvas);
-
-  /**
-   * Constructs an NX by NY grid (360 by 181 in most cases). Each grid square
-   * is 1x1.
-   * 
-   * @param {!WindData} windData An instance of WindData.
-   * @return {!Function} A function to interpolate the wind points on the grid.
-   */
-  var buildGrid = function buildGrid(windData) {
-    var uComp = windData[0];
-    var vComp = windData[1];
-
-    // Returns an x,y coordinate pair from uComp and vComp.
-    var getDataPoint = function getDataPoint(i) {
-      return [uComp.data[i], vComp.data[i]];
-    };
-
-    // The grid's origin (e.g., 0.0E, 90.0N)
-    var λ0 = uComp.header.lo1;
-    var φ0 = uComp.header.la1;
-
-    // Distance between grid points (e.g., 2.5 deg lon, 2.5 deg lat).
-    var Δλ = uComp.header.dx;
-    var Δφ = uComp.header.dy;
-
-    // Number of grid points W-E and N-S (e.g., 144 x 73).
-    var ni = uComp.header.nx;
-    var nj = uComp.header.ny;
-
-    // Scan mode 0 assumed. Longitude increases from λ0, and latitude decreases
-    // from φ0:
-    // http://www.nco.ncep.noaa.gov/pmb/docs/grib2/grib2_table3-4.shtml
-    var grid = [];
-    var isContinuous = Math.floor(ni * Δλ) >= 360;
-    var p = 0;
-
-    for (var j = 0; j < nj; j++) {
-      var row = [];
-      for (var i = 0; i < ni; i++, p++) {
-        row[i] = getDataPoint(p);
-      }
-
-      // For wrapped grids, duplicate first column as last column to simplify
-      // interpolation logic.
-      if (isContinuous) {
-        row.push(row[0]);
-      }
-
-      grid[j] = row;
-    }
-
-    return function (λ, φ) {
-      // Calculate longitude index in wrapped range [0, 360).
-      var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
-
-      // Calculate latitude index in direction +90 to -90.
-      var j = (φ0 - φ) / Δφ;
-      var fi = Math.floor(i);
-      var ci = fi + 1;
-      var fj = Math.floor(j);
-      var cj = fj + 1;
-
-      var row = void 0;
-      if (row = grid[fj]) {
-        var g00 = row[fi];
-        var g10 = row[ci];
-        if ((0, _functions.isValue)(g00) && (0, _functions.isValue)(g10) && (row = grid[cj])) {
-          var g01 = row[fi];
-          var g11 = row[ci];
-          if ((0, _functions.isValue)(g01) && (0, _functions.isValue)(g11)) {
-            // All four points found, so interpolate the value.
-            return _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
-          }
-        }
-      }
-      return null;
-    };
-  };
-
-  /**
-   * Calculate distortion of the wind vector caused by the shape of the
-   * projection at point (x, y). The wind vector is modified in place and
-   * returned by this function.
-   */
-  var distort = function distort(λ, φ, x, y, scale, wind, windy) {
-    var u = wind[0] * scale;
-    var v = wind[1] * scale;
-    var d = _math.math.distortion(λ, φ, x, y, windy);
-
-    // Scale distortion vectors by u and v, then add.
-    wind[0] = d[0] * u + d[2] * v;
-    wind[1] = d[1] * u + d[3] * v;
-
-    return wind;
-  };
-
-  var createField = function createField(columns, bounds) {
-    /**
-     * @returns {Array} wind vector [u, v, magnitude] at the point (x, y).
-     */
-    function field(x, y) {
-      var column = columns[Math.round(x)];
-      return column && column[Math.round(y)] || NULL_WIND_VECTOR;
-    }
-
-    // Frees the massive "columns" array for GC. Without this, the array is
-    // leaked (in Chrome) each time a new field is interpolated because the
-    // field closure's context is leaked, for reasons that defy explanation.
-    field.release = function () {
-      columns = [];
-    };
-
-    // UNDONE: this method is terrible
-    field.randomize = function (particle) {
-      return Object.assign(particle, {
-        x: Math.round(Math.floor(Math.random() * bounds.width) + bounds.x),
-        y: Math.round(Math.floor(Math.random() * bounds.height) + bounds.y)
-      });
-    };
-
-    return field;
-  };
-
-  var buildBounds = function buildBounds(bounds, width, height) {
-    var upperLeft = bounds[0];
-    var lowerRight = bounds[1];
-    var x = Math.round(upperLeft[0]);
-    var y = Math.max(Math.floor(upperLeft[1], 0), 0);
-    var xMax = Math.min(Math.ceil(lowerRight[0], width), width - 1);
-    var yMax = Math.min(Math.ceil(lowerRight[1], height), height - 1);
-    return { x: x, y: y, xMax: width, yMax: yMax, width: width, height: height };
-  };
-
-  var interpolateField = function interpolateField(grid, bounds, extent) {
-    var velocity = bounds.height * velocityScale;
-
-    var x = bounds.x;
-    var columns = [];
-
-    function interpolateColumn(x) {
-      var column = [];
-      for (var y = bounds.y; y <= bounds.yMax; y += 2) {
-        var coord = _math.math.invert(x, y, extent);
-
-        if (coord) {
-          var λ = coord[0];
-          var φ = coord[1];
-
-          if (isFinite(λ)) {
-            var wind = grid(λ, φ);
-
-            if (wind) {
-              wind = distort(λ, φ, x, y, velocity, wind, extent);
-              column[y + 1] = column[y] = wind;
-            }
-          }
-        }
-      }
-      columns[x + 1] = columns[x] = column;
-    }
-
-    while (x < bounds.width) {
-      interpolateColumn(x);
-      x += 2;
-    }
-
-    return createField(columns, bounds);
-  };
-
-  /**
-   * Moves the wind particles.
-   */
-  var evolve = function evolve(buckets, particles, field) {
-    buckets.forEach(function (bucket) {
-      bucket.length = 0;
-    });
-    particles.forEach(function (particle) {
-      if (particle.age > MAX_PARTICLE_AGE) {
-        field.randomize(particle).age = 0;
-      }
-
-      // Vector at current position.
-      var vector = field(particle.x, particle.y);
-
-      if (vector[2] === null) {
-        // Particle has escaped the grid, never to return.
-        particle.age = MAX_PARTICLE_AGE;
-      } else {
-        var xt = particle.x + vector[0];
-        var yt = particle.y + vector[1];
-
-        if (field(xt, yt)[2] !== null) {
-          // Path from (x,y) to (xt,yt) is visible, so add this particle to
-          // the appropriate draw bucket.
-          particle.xt = xt;
-          particle.yt = yt;
-          buckets[colorScheme.indexFor(vector[2])].push(particle);
-        } else {
-          // Particle isn't visible, but it still moves through the field.
-          particle.x = xt;
-          particle.y = yt;
-        }
-      }
-      particle.age += 1;
-    });
-  };
-
-  /**
-   * Animates the wind visualization.
-   */
-  var animate = function animate(bounds, field, numPoints) {
-    colorScheme.indexFor = function (m) {
-      // map wind speed to a style
-      var len = colorScheme.length - 1;
-      return Math.floor(Math.min(m, MAX_WIND_INTENSITY) / MAX_WIND_INTENSITY * len);
-    };
-
-    var buckets = colorScheme.map(Array);
-    var particleCount = numPoints * particleReduction;
-    var particles = [];
-    for (var i = 0; i < particleCount; i++) {
-      particles.push(field.randomize({
-        age: Math.floor(Math.random() * MAX_PARTICLE_AGE)
-      }));
-    }
-
-    var counter = 0;
-    context.renderer.prepare(context, particleWidth, particleFadeOpacity);
-
-    (function frame() {
-      try {
-        if (!windy.stop) {
-          counter += 1;
-          if (counter >= 1000) {
-            counter = 0;
-            clear();
-          }
-          (0, _functions.getAnimationFrame)(frame);
-          evolve(buckets, particles, field);
-          context.renderer.draw(buckets, bounds, context, colorScheme);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  };
-
-  /**
-   * Updates the wind animation with new configurations.
-   * @param {!ConfigPayload} A ConfigPayload instance. 
-   */
-  var start = function start(config) {
-    var extent = config.extent();
-    var width = extent.width;
-    var height = extent.height;
-    var bounds = extent.cropBounds || [[0, 0], [width, height]];
-
-    config.canvas.width = width;
-    config.canvas.height = height;
-    config.canvas.style.width = width + 'px';
-    config.canvas.style.height = height + 'px';
-
-    var mapBounds = {
-      south: _math.math.deg2rad(extent.latlng[0][1]),
-      north: _math.math.deg2rad(extent.latlng[1][1]),
-      east: _math.math.deg2rad(extent.latlng[1][0]),
-      west: _math.math.deg2rad(extent.latlng[0][0]),
-      width: width,
-      height: height
-    };
-
-    // Do not animate if map repeats across x-axis.
-    // @TODO (dannycochran) Figure out how to continuously display wind across
-    // repeating map layout.
-    if (mapBounds.west - mapBounds.east > 0 || Math.abs(mapBounds.west) - Math.abs(mapBounds.east) === 0 || !config.data) {
-      if (config.boundsExceededCallback) {
-        config.boundsExceededCallback(mapBounds);
-      }
-      return;
-    }
-
-    // Optional configurations.
-    colorScheme = config.colorScheme || colorScheme;
-    velocityScale = config.velocityScale || velocityScale;
-    particleWidth = config.particleWidth || particleWidth;
-    particleFadeOpacity = config.particleFadeOpacity || particleFadeOpacity;
-    particleReduction = config.particleReduction || particleReduction;
-
-    // Build grid.
-    var grid = buildGrid(config.data);
-    var builtBounds = buildBounds(bounds, width, height);
-
-    windy.field = interpolateField(grid, builtBounds, mapBounds);;
-    windy.mapBounds = mapBounds;
-
-    windy.stop = false;
-    animate(builtBounds, windy.field, config.data[0].data.length);
-  };
-
-  /**
-   * Stops and clears the wind animation.
-   */
-  var stop = function stop() {
-    clear();
-    windy.stop = true;
-    if (windy.field) windy.field.release();
-  };
-
-  /**
-   * Clear the drawing context.
-   */
-  var clear = function clear() {
-    if (!windy.mapBounds) return;
-    context.renderer.clear(context, windy.mapBounds);
-  };
-
-  var windy = {};
-
-  return { stop: stop, start: start };
-};
-
-/** 
- * Returns the context for a given canvas element or null if unsupported.
- * @param {!HTMLCanvasElement} canvasEl The canvas upon which to draw.
- * @return {?WebGLRenderingContext|CanvasRenderingContext2D}
- */
-function getContext(canvasEl) {
-  var ctx = null;
-
-  if (canvasEl.getContext) {
-    [['2d', _canvas.canvas]].forEach(function (typePair) {
-      if (!ctx) {
-        ctx = canvasEl.getContext(typePair[0]);
-        if (ctx) ctx.renderer = typePair[1];
-      }
-    });
-  }
-
-  return ctx;
-};
-
-},{"../renderers/canvas":2,"../renderers/gl":3,"../utilities/functions":4,"../utilities/math":5}]},{},[1]);
+},{"../utilities/functions":6,"./../renderers/canvas/canvas":2,"./../renderers/gl/gl":3,"./../renderers/renderer":5}]},{},[1]);

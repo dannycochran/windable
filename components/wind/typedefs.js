@@ -42,8 +42,8 @@ export let MapDimensions;
  * @typedef {{
  *   canvas: (!HTMLCanvasElement) The canvas to which wind will be rendered.
  *   extent: (Function():!MapDimensions) An MapDimensions object.
- *   data: (!WindData) Wind data from NOAA (see examples in data/).
  *
+ *   data: (!WindData=) Optional wind data from NOAA (see examples in data/).
  *   boundsExceededCallback: (!Function=) An optional callback to invoke when x-axis bounds are exceeded.
  *   colorScheme: (!Array<string>=) An optional color scheme.
  *   velocityScale: (!number=) An optional scale for the particle velocity.
