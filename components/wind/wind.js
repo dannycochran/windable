@@ -2,7 +2,7 @@
  * A light controller class for using a modified version of Esri's Windy.JS.
  */
 
-import {debounce} from '../utilities/functions';
+import {debounce} from './../utilities/functions';
 
 import {getContextType} from './../renderers/renderer';
 import {WebGLRenderer} from './../renderers/gl/gl';

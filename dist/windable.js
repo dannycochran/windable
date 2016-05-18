@@ -913,7 +913,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       * A light controller class for using a modified version of Esri's Windy.JS.
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       */
 
-var _functions = require('../utilities/functions');
+var _functions = require('./../utilities/functions');
 
 var _renderer = require('./../renderers/renderer');
 
@@ -996,4 +996,4 @@ var WindMap = exports.WindMap = function () {
 
 ;
 
-},{"../utilities/functions":6,"./../renderers/canvas/canvas":2,"./../renderers/gl/gl":3,"./../renderers/renderer":5}]},{},[1]);
+},{"./../renderers/canvas/canvas":2,"./../renderers/gl/gl":3,"./../renderers/renderer":5,"./../utilities/functions":6}]},{},[1]);

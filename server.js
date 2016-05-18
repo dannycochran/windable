@@ -8,6 +8,7 @@ app.set('port', (process.env.PORT || 5000));
 // Serve static assets.
 app.use('/examples', express.static('examples'));
 app.use('/dist', express.static('dist'));
+
 app.use(express.compress());
 app.use(express.urlencoded());
 
