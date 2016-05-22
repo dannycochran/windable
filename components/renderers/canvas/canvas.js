@@ -9,11 +9,10 @@ export class CanvasRenderer extends Renderer {
   }
 
   draw_(buckets, bounds) {
-    // Fade existing particle trails.
-    const prev = this.context.globalCompositeOperation;
+    // Blend the existing layers.
     this.context.globalCompositeOperation = 'destination-in';
     this.context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    this.context.globalCompositeOperation = prev;
+    this.context.globalCompositeOperation = 'source-over';
 
     // Draw new particle trails.
     buckets.forEach((bucket, i) => {

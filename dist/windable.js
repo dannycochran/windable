@@ -47,11 +47,10 @@ var CanvasRenderer = exports.CanvasRenderer = function (_Renderer) {
     value: function draw_(buckets, bounds) {
       var _this2 = this;
 
-      // Fade existing particle trails.
-      var prev = this.context.globalCompositeOperation;
+      // Blend the existing layers.
       this.context.globalCompositeOperation = 'destination-in';
       this.context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
-      this.context.globalCompositeOperation = prev;
+      this.context.globalCompositeOperation = 'source-over';
 
       // Draw new particle trails.
       buckets.forEach(function (bucket, i) {
@@ -126,15 +125,17 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WebGLRenderer).call(this, canvas, extent, context));
 
     _this.gl = context;
-    _this.particlesProgram = _this.constructShaders_(_shaders.vert, _shaders.frag);
-
+    _this.particlesProgram = _this.createProgram_(_shaders.particleVert, _shaders.particleFrag);
+    _this.rectProgram = _this.createProgram_(_shaders.rectVert, _shaders.rectFrag);
     _this.resolution = window.devicePixelRatio || 1;
     _this.scale = 1;
     _this.NUM_ATTRS = 6;
 
+    _this.gl.linkProgram(_this.rectProgram);
     _this.gl.linkProgram(_this.particlesProgram);
-    _this.gl.blendFuncSeparate(_this.gl.SRC_ALPHA, _this.gl.ONE_MINUS_SRC_ALPHA, _this.gl.ONE, _this.gl.ONE_MINUS_SRC_ALPHA);
+
     _this.gl.enable(_this.gl.BLEND);
+    _this.gl.blendEquation(_this.gl.FUNC_ADD);
 
     canvas.addEventListener('webglcontextlost', function (e) {
       return _this.onContextLost_(e);
@@ -146,8 +147,8 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
   }
 
   _createClass(WebGLRenderer, [{
-    key: 'constructShaders_',
-    value: function constructShaders_(vert, frag) {
+    key: 'createProgram_',
+    value: function createProgram_(vert, frag) {
       var _this2 = this;
 
       var getShaders = function getShaders(type, source) {
@@ -172,8 +173,25 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
       return this;
     }
   }, {
+    key: 'blendLayers_',
+    value: function blendLayers_() {
+      this.gl.blendFunc(this.gl.DST_ALPHA, this.gl.ONE_MINUS_DST_ALPHA);
+      this.gl.useProgram(this.rectProgram);
+
+      var positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
+      var buffer = this.gl.createBuffer();
+      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+      this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), this.gl.STATIC_DRAW);
+      this.gl.enableVertexAttribArray(positionLocation);
+      this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
+      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+      this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    }
+  }, {
     key: 'draw_',
     value: function draw_(buckets, bounds) {
+      this.blendLayers_();
+
       this.gl.useProgram(this.particlesProgram);
 
       var buffer = this.gl.createBuffer();
@@ -236,14 +254,14 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var frag = exports.frag = ' \
+var particleFrag = exports.particleFrag = ' \
   precision mediump float; \
   varying vec4 rgba; \
   void main() { \
     gl_FragColor = rgba; \
   }';
 
-var vert = exports.vert = ' \
+var particleVert = exports.particleVert = ' \
   uniform vec2 u_resolution; \
   attribute vec2 a_position; \
   attribute vec4 a_rgba; \
@@ -252,6 +270,17 @@ var vert = exports.vert = ' \
     vec2 clipspace = a_position / u_resolution * 2.0 - 1.0; \
     gl_Position = vec4(clipspace * vec2(1, -1), 0, 1); \
     rgba = a_rgba / 255.0; \
+  }';
+
+var rectFrag = exports.rectFrag = ' \
+  void main() { \
+    gl_FragColor = vec4(0,0,0,0.97); \
+  }';
+
+var rectVert = exports.rectVert = ' \
+  attribute vec2 a_position; \
+  void main() { \
+    gl_Position = vec4(a_position, 0, 1); \
   }';
 
 },{}],5:[function(require,module,exports){

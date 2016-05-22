@@ -1,6 +1,8 @@
 import {
-  frag,
-  vert
+  particleFrag,
+  particleVert,
+  rectFrag,
+  rectVert
 } from './shaders';
 
 import {Renderer} from './../renderer';
@@ -10,21 +12,23 @@ export class WebGLRenderer extends Renderer {
     super(canvas, extent, context);
 
     this.gl = context;
-    this.particlesProgram = this.constructShaders_(vert, frag);
-
+    this.particlesProgram = this.createProgram_(particleVert, particleFrag);
+    this.rectProgram = this.createProgram_(rectVert, rectFrag);
     this.resolution = window.devicePixelRatio || 1;
     this.scale = 1;
     this.NUM_ATTRS = 6;
 
+    this.gl.linkProgram(this.rectProgram);
     this.gl.linkProgram(this.particlesProgram);
-    this.gl.blendFuncSeparate(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA, this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
+
     this.gl.enable(this.gl.BLEND);
+    this.gl.blendEquation(this.gl.FUNC_ADD);
 
     canvas.addEventListener('webglcontextlost', e => this.onContextLost_(e));
     canvas.addEventListener('webglcontextrestored', e => this.onContextRestored_(e));
   }
 
-  constructShaders_(vert, frag) {
+  createProgram_(vert, frag) {
     const getShaders = (type, source) => {
       const shader = this.gl.createShader(type);
       this.gl.shaderSource(shader, source);
@@ -46,7 +50,32 @@ export class WebGLRenderer extends Renderer {
     return this;
   }
 
+  blendLayers_() {
+    this.gl.blendFunc(this.gl.DST_ALPHA, this.gl.ONE_MINUS_DST_ALPHA);
+    this.gl.useProgram(this.rectProgram);
+
+    const positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
+    const buffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+    this.gl.bufferData(
+        this.gl.ARRAY_BUFFER, 
+        new Float32Array([
+            -1.0, -1.0, 
+             1.0, -1.0, 
+            -1.0,  1.0, 
+            -1.0,  1.0, 
+             1.0, -1.0, 
+             1.0,  1.0]), 
+        this.gl.STATIC_DRAW);
+    this.gl.enableVertexAttribArray(positionLocation);
+    this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+  }
+
   draw_(buckets, bounds) {
+    this.blendLayers_();
+
     this.gl.useProgram(this.particlesProgram);
 
     const buffer = this.gl.createBuffer();
