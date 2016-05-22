@@ -87,7 +87,7 @@
           ]
         });
         // Initialize the wind map.
-        const windMap = new WindMap({
+        window.windMap = new WindMap({
           canvas: new CanvasLayer({map: map}).canvas,
           extent: () => {
             return {
@@ -149,7 +149,7 @@
 
         const onChangeParticleSpeed = function(e) {
           const value = parseFloat(e.currentTarget.value) * 0.0000001;
-          windMap.update({velocityScale: value});
+          windMap.update({velocityScale: value || 0.0000001});
         };
 
         altitudeMenu.addEventListener('change', onSelectAltitude);

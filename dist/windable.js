@@ -358,6 +358,9 @@ var Renderer = exports.Renderer = function () {
     // The particle field.
     this.field_ = null;
 
+    // Build a vector from lat,lng
+    this.buildVector_ = null;
+
     // The map boundaries.
     this.mapBounds_ = null;
 
@@ -366,6 +369,9 @@ var Renderer = exports.Renderer = function () {
 
     // Holds an RGB color scheme.
     this.rgbColorScheme_ = {};
+
+    // Stores the max wind speed.
+    this.maxWindSpeed_ = 0;
 
     // Configurable fields for the user.
     this.config_ = {
@@ -473,6 +479,8 @@ var Renderer = exports.Renderer = function () {
   }, {
     key: 'buildGrid_',
     value: function buildGrid_(windData) {
+      var _this = this;
+
       var uComp = windData[0];
       var vComp = windData[1];
 
@@ -515,12 +523,7 @@ var Renderer = exports.Renderer = function () {
         grid[j] = row;
       }
 
-      return function (λ, φ) {
-        // Calculate longitude index in wrapped range [0, 360).
-        var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
-
-        // Calculate latitude index in direction +90 to -90.
-        var j = (φ0 - φ) / Δφ;
+      var buildVector = function buildVector(i, j) {
         var fi = Math.floor(i);
         var ci = fi + 1;
         var fj = Math.floor(j);
@@ -535,11 +538,25 @@ var Renderer = exports.Renderer = function () {
             var g11 = row[ci];
             if ((0, _functions.isValue)(g01) && (0, _functions.isValue)(g11)) {
               // All four points found, so interpolate the value.
-              return _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
+              var _vector = _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
+              if (_vector[2] > _this.maxWindSpeed_) _this.maxWindSpeed_ = _vector[2];
+              return _vector;
             }
           }
         }
         return null;
+      };
+
+      this.buildVector_ = buildVector.bind(this);
+
+      return function (λ, φ) {
+        // Calculate longitude index in wrapped range [-180, 180).
+        var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
+
+        // Calculate latitude index in direction +90 to -90.
+        var j = (φ0 - φ) / Δφ;
+
+        return buildVector(i, j);
       };
     }
 
@@ -604,7 +621,7 @@ var Renderer = exports.Renderer = function () {
   }, {
     key: 'interpolateField_',
     value: function interpolateField_(grid, bounds) {
-      var _this = this;
+      var _this2 = this;
 
       var velocity = bounds.height * this.config_.velocityScale;
 
@@ -614,7 +631,7 @@ var Renderer = exports.Renderer = function () {
       var interpolateColumn = function interpolateColumn(x) {
         var column = [];
         for (var y = bounds.y; y <= bounds.yMax; y += 2) {
-          var coord = _math.math.invert(x, y, _this.mapBounds_);
+          var coord = _math.math.invert(x, y, _this2.mapBounds_);
 
           if (coord) {
             var λ = coord[0];
@@ -624,7 +641,7 @@ var Renderer = exports.Renderer = function () {
               var wind = grid(λ, φ);
 
               if (wind) {
-                wind = _this.distort_(λ, φ, x, y, velocity, wind);
+                wind = _this2.distort_(λ, φ, x, y, velocity, wind);
                 column[y + 1] = column[y] = wind;
               }
             }
@@ -648,7 +665,7 @@ var Renderer = exports.Renderer = function () {
   }, {
     key: 'evolve_',
     value: function evolve_(buckets, particles) {
-      var _this2 = this;
+      var _this3 = this;
 
       this.particleVectors_.length = 0;
       buckets.forEach(function (bucket) {
@@ -657,11 +674,11 @@ var Renderer = exports.Renderer = function () {
 
       particles.forEach(function (particle) {
         if (particle.age > MAX_PARTICLE_AGE) {
-          _this2.field_.randomize(particle).age = 0;
+          _this3.field_.randomize(particle).age = 0;
         }
 
         // Vector at current position.
-        var vector = _this2.field_(particle.x1, particle.y1);
+        var vector = _this3.field_(particle.x1, particle.y1);
 
         if (vector[2] === null) {
           // Particle has escaped the grid, never to return.
@@ -670,26 +687,26 @@ var Renderer = exports.Renderer = function () {
           var x2 = particle.x1 + vector[0];
           var y2 = particle.y1 + vector[1];
 
-          if (_this2.field_(x2, y2)[2] !== null) {
+          if (_this3.field_(x2, y2)[2] !== null) {
             // Path from (x,y) to (xt,yt) is visible, so add this particle to
             // the appropriate draw bucket.
             particle.x2 = x2;
             particle.y2 = y2;
 
-            var colorIndex = _this2.config_.colorScheme.indexFor(vector[2]);
-            var rgba = _this2.rgbColorScheme_.get(colorIndex);
+            var colorIndex = _this3.config_.colorScheme.indexFor(vector[2]);
+            var rgba = _this3.rgbColorScheme_.get(colorIndex);
 
             buckets[colorIndex].push(particle);
 
-            _this2.particleVectors_.push(particle.x1 * _this2.resolution);
-            _this2.particleVectors_.push(particle.y1 * _this2.resolution);
+            _this3.particleVectors_.push(particle.x1 * _this3.resolution);
+            _this3.particleVectors_.push(particle.y1 * _this3.resolution);
             rgba.forEach(function (v) {
-              _this2.particleVectors_.push(v);
+              _this3.particleVectors_.push(v);
             });
-            _this2.particleVectors_.push(particle.x2 * _this2.resolution);
-            _this2.particleVectors_.push(particle.y2 * _this2.resolution);
+            _this3.particleVectors_.push(particle.x2 * _this3.resolution);
+            _this3.particleVectors_.push(particle.y2 * _this3.resolution);
             rgba.forEach(function (v) {
-              _this2.particleVectors_.push(v);
+              _this3.particleVectors_.push(v);
             });
           } else {
             // Particle isn't visible, but it still moves through the field.
@@ -708,11 +725,11 @@ var Renderer = exports.Renderer = function () {
   }, {
     key: 'animate_',
     value: function animate_(bounds, numPoints) {
-      var _this3 = this;
+      var _this4 = this;
 
       this.config_.colorScheme.indexFor = function (m) {
         // map wind speed to a style
-        var length = _this3.config_.colorScheme.length - 1;
+        var length = _this4.config_.colorScheme.length - 1;
         return Math.floor(Math.min(m, MAX_WIND_INTENSITY) / MAX_WIND_INTENSITY * length);
       };
 
@@ -726,7 +743,7 @@ var Renderer = exports.Renderer = function () {
           return [r, g, b, 255];
         }),
         get: function get(index) {
-          return _this3.rgbColorScheme_.colors[index];
+          return _this4.rgbColorScheme_.colors[index];
         }
       };
 
@@ -742,19 +759,72 @@ var Renderer = exports.Renderer = function () {
       this.prepare_();
 
       var frame = function frame() {
-        if (!_this3.stopped_) {
+        if (!_this4.stopped_) {
           counter += 1;
           if (counter >= 1000) {
             counter = 0;
-            _this3.clear_();
+            _this4.clear_();
           }
-          _this3.currentFrame_ = (0, _functions.getAnimationFrame)(frame);
-          _this3.evolve_(buckets, particles);
-          _this3.draw_(buckets, bounds);
+          _this4.currentFrame_ = (0, _functions.getAnimationFrame)(frame);
+          _this4.evolve_(buckets, particles);
+          _this4.draw_(buckets, bounds);
         }
       };
 
       frame();
+    }
+
+    /**
+     * Returns a mapping of color identities to their velocity buckets.
+     * @return {!Array<!Array<string, number>>}
+     */
+
+  }, {
+    key: 'velocityScale',
+    value: function velocityScale() {
+      var _this5 = this;
+
+      var increment = MAX_WIND_INTENSITY / this.config_.colorScheme.length;
+      return this.config_.colorScheme.map(function (color, idx) {
+        idx += 1;
+        var value = idx * increment;
+        if (idx === _this5.config_.colorScheme.length) value = _this5.maxWindSpeed_;
+        return [color, _math.math.convertMagnitudeToKMPH(value)];
+      });
+    }
+
+    /**
+     * Returns the wind speed & direction at given x,y relative to the canvas
+     * element for the current data frame.
+     *
+     * @param {!Object} coordinates {x: number, y: number}.
+     * @return {!Array<!number>} [wind direction, speed].
+     */
+
+  }, {
+    key: 'pointFromXY',
+    value: function pointFromXY(x, y) {
+      var test = [40.544888470536456, 4.593271031856287, 40.80424144449116];
+      return _math.math.formatVector(vector);
+    }
+
+    /**
+     * Returns the wind speed & direction at given coordinates lat,lng for the
+     * current data frame.
+     *
+     * @param {!Object} coordinates {lat: number, lng: number}.
+     * @return {!Array<!number>} [wind direction, speed].
+     */
+
+  }, {
+    key: 'pointFromLatLng',
+    value: function pointFromLatLng(lat, lng) {
+      if (!this.buildVector_) throw new Error('Must supply data first.');
+      lat = Math.min(Math.max(lat + 90, 0), 179);
+      lat = Math.min(Math.max(lat + 180, 0), 359);
+
+      var vector = this.buildVector_(lat, lng, true);
+      return _math.math.formatVector(this.buildVector_(lat, lng));
     }
 
     /**
@@ -893,6 +963,27 @@ var floorMod = function floorMod(a, n) {
 };
 
 /**
+ * Returns wind direction and speed in KMPH.
+ * @param {!Array<number>} wind A wind vector [u, v, m]
+ * @return {!Array<number>} Returns [wind direction, KMPH]
+ */
+var formatVector = function formatVector(wind) {
+  var d = Math.atan2(-wind[0], -wind[1]) / τ * 360; // calculate into-the-wind cardinal degrees
+  var direction = Math.round((d + 360) % 360 / 5) * 5; // shift [-180, 180] to [0, 360], and round to nearest 5.
+  var kmph = convertMagnitudeToKMPH(wind[2]);
+  return [direction, kmph];
+};
+
+/**
+ * Returns wind speed.
+ * @param {!number} magnitude Wind magnitude from u,v,m.
+ * @return {!number} The wind speed in kmph.
+ */
+var convertMagnitudeToKMPH = function convertMagnitudeToKMPH(magnitude) {
+  return magnitude * 3.6;
+};
+
+/**
  * @param {number}
  * @return {number} Radians from degrees.
  */
@@ -978,8 +1069,10 @@ var invert = function invert(x, y, extent) {
 var math = exports.math = {
   deg2rad: deg2rad,
   bilinearInterpolateVector: bilinearInterpolateVector,
+  convertMagnitudeToKMPH: convertMagnitudeToKMPH,
   distortion: distortion,
   floorMod: floorMod,
+  formatVector: formatVector,
   invert: invert,
   rad2deg: rad2deg
 };
@@ -1046,7 +1139,7 @@ var WindMap = exports.WindMap = function () {
 
     _classCallCheck(this, WindMap);
 
-    var contextType = config.contextType || getContextType();
+    var contextType = '2d';
     var context = config.canvas.getContext(contextType);
 
     if (contextType.indexOf('2d') > -1) {
@@ -1072,7 +1165,7 @@ var WindMap = exports.WindMap = function () {
   }
 
   /**
-   * Stop the WindMap animation.
+   * Stops the WindMap animation.
    * @return {!WindMap} The windmap instance.
    */
 
@@ -1085,7 +1178,7 @@ var WindMap = exports.WindMap = function () {
     }
 
     /**
-     * Start the WindMap animation.
+     * Starts the WindMap animation.
      * @param {!ConfigPayload=} config An instance of ConfigPayload.
      * @return {!WindMap} The windmap instance.
      */
@@ -1100,7 +1193,7 @@ var WindMap = exports.WindMap = function () {
     }
 
     /**
-     * Update the WindMap data and its optional configurations.
+     * Updates the WindMap data and its optional configurations.
      * @param {!ConfigPayload=} config An instance of ConfigPayload.
      * @return {!WindMap} The windmap instance.
      */

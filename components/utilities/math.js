@@ -18,6 +18,30 @@ const floorMod = function(a, n) {
 
 
 /**
+ * Returns wind direction and speed in KMPH.
+ * @param {!Array<number>} wind A wind vector [u, v, m]
+ * @return {!Array<number>} Returns [wind direction, KMPH]
+ */
+const formatVector = function(wind) {
+  const d = Math.atan2(-wind[0], -wind[1]) / τ * 360;  // calculate into-the-wind cardinal degrees
+  const direction = Math.round((d + 360) % 360 / 5) * 5;  // shift [-180, 180] to [0, 360], and round to nearest 5.
+  const kmph = convertMagnitudeToKMPH(wind[2]);
+  return [direction, kmph];
+};
+
+
+/**
+ * Returns wind speed.
+ * @param {!number} magnitude Wind magnitude from u,v,m.
+ * @return {!number} The wind speed in kmph.
+ */
+const convertMagnitudeToKMPH = function(magnitude) {
+  return magnitude * 3.6;
+};
+
+
+
+/**
  * @param {number}
  * @return {number} Radians from degrees.
  */
@@ -113,8 +137,10 @@ const invert = function(x, y, extent) {
 export const math = {
   deg2rad: deg2rad,
   bilinearInterpolateVector: bilinearInterpolateVector,
+  convertMagnitudeToKMPH: convertMagnitudeToKMPH,
   distortion: distortion,
   floorMod: floorMod,
+  formatVector: formatVector,
   invert: invert,
-  rad2deg: rad2deg
+  rad2deg: rad2deg,
 };

@@ -14,7 +14,7 @@ export class WindMap {
    * @param {!ConfigPayload} config An instance of ConfigPayload.
    */
   constructor(config) {
-    const contextType = config.contextType || getContextType();
+    const contextType = '2d';
     const context = config.canvas.getContext(contextType);
 
     if (contextType.indexOf('2d') > -1) {
@@ -38,7 +38,7 @@ export class WindMap {
 
 
   /**
-   * Stop the WindMap animation.
+   * Stops the WindMap animation.
    * @return {!WindMap} The windmap instance.
    */
   stop() {
@@ -48,7 +48,7 @@ export class WindMap {
 
 
   /**
-   * Start the WindMap animation.
+   * Starts the WindMap animation.
    * @param {!ConfigPayload=} config An instance of ConfigPayload.
    * @return {!WindMap} The windmap instance.
    */
@@ -59,7 +59,7 @@ export class WindMap {
 
 
   /**
-   * Update the WindMap data and its optional configurations.
+   * Updates the WindMap data and its optional configurations.
    * @param {!ConfigPayload=} config An instance of ConfigPayload.
    * @return {!WindMap} The windmap instance.
    */

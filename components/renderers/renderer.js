@@ -28,7 +28,7 @@ import {math} from './../utilities/math';
 import {palettes} from './../utilities/palettes';
 
 // Wind velocity at which particle intensity is maximum (m/s).
-const MAX_WIND_INTENSITY = 30
+const MAX_WIND_INTENSITY = 30;
 
 // Max number of frames a particle is drawn before regeneration.
 const MAX_PARTICLE_AGE = 100;
@@ -60,6 +60,9 @@ export class Renderer {
     // The particle field.
     this.field_ = null;
 
+    // Build a vector from lat,lng
+    this.buildVector_ = null;
+
     // The map boundaries.
     this.mapBounds_ = null;
 
@@ -68,6 +71,9 @@ export class Renderer {
 
     // Holds an RGB color scheme.
     this.rgbColorScheme_ = {};
+
+    // Stores the max wind speed.
+    this.maxWindSpeed_ = 0;
 
     // Configurable fields for the user.
     this.config_ = {
@@ -209,12 +215,7 @@ export class Renderer {
       grid[j] = row;
     }
 
-    return function(λ, φ) {
-      // Calculate longitude index in wrapped range [0, 360).
-      const i = math.floorMod(λ - λ0, 360) / Δλ;
-
-      // Calculate latitude index in direction +90 to -90.
-      const j = (φ0 - φ) / Δφ;
+    const buildVector = (i, j) => {
       const fi = Math.floor(i);
       const ci = fi + 1;
       const fj = Math.floor(j);
@@ -229,12 +230,26 @@ export class Renderer {
           const g11 = row[ci];
           if (isValue(g01) && isValue(g11)) {
             // All four points found, so interpolate the value.
-            return math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
+            const vector = math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
+            if (vector[2] > this.maxWindSpeed_) this.maxWindSpeed_ = vector[2];
+            return vector;
           }
         }
       }
       return null;
-    }
+    };
+
+    this.buildVector_ = buildVector.bind(this);
+
+    return function(λ, φ) {
+      // Calculate longitude index in wrapped range [-180, 180).
+      const i = math.floorMod(λ - λ0, 360) / Δλ;
+
+      // Calculate latitude index in direction +90 to -90.
+      const j = (φ0 - φ) / Δφ;
+
+      return buildVector(i, j);
+    };
   }
 
 
@@ -431,6 +446,52 @@ export class Renderer {
     frame();
   }
 
+
+  /**
+   * Returns a mapping of color identities to their velocity buckets.
+   * @return {!Array<!Array<string, number>>}
+   */
+  velocityScale() {
+    const increment = MAX_WIND_INTENSITY / this.config_.colorScheme.length;
+    return this.config_.colorScheme.map((color, idx) => {
+      idx += 1;
+      let value = idx * increment;
+      if (idx === this.config_.colorScheme.length) value = this.maxWindSpeed_;
+      return [
+        color,
+        math.convertMagnitudeToKMPH(value)
+      ];
+    });
+  }
+
+  /**
+   * Returns the wind speed & direction at given x,y relative to the canvas
+   * element for the current data frame.
+   *
+   * @param {!Object} coordinates {x: number, y: number}.
+   * @return {!Array<!number>} [wind direction, speed].
+   */
+  pointFromXY(x, y) {
+    const test = [40.544888470536456, 4.593271031856287, 40.80424144449116];
+    return math.formatVector(vector);
+  }
+
+
+  /**
+   * Returns the wind speed & direction at given coordinates lat,lng for the
+   * current data frame.
+   *
+   * @param {!Object} coordinates {lat: number, lng: number}.
+   * @return {!Array<!number>} [wind direction, speed].
+   */
+  pointFromLatLng(lat, lng) {
+    if (!this.buildVector_) throw new Error('Must supply data first.');
+    lat = Math.min(Math.max(lat + 90, 0), 179);
+    lat = Math.min(Math.max(lat + 180, 0), 359);
+
+    const vector = this.buildVector_(lat, lng, true);
+    return math.formatVector(this.buildVector_(lat, lng));
+  }
 
   /**
    * Clear the drawing context. Implementation specific to renderer.
