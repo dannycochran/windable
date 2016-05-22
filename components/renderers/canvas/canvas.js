@@ -11,7 +11,7 @@ export class CanvasRenderer extends Renderer {
   draw_(buckets, bounds) {
     // Fade existing particle trails.
     const prev = this.context.globalCompositeOperation;
-    this.context.globalCompositeOperation = "destination-in";
+    this.context.globalCompositeOperation = 'destination-in';
     this.context.fillRect(bounds.x, bounds.y, bounds.width, bounds.height);
     this.context.globalCompositeOperation = prev;
 
@@ -22,10 +22,10 @@ export class CanvasRenderer extends Renderer {
         this.context.strokeStyle = this.config_.colorScheme[i];
 
         bucket.forEach((particle) => {
-          this.context.moveTo(particle.x, particle.y);
-          this.context.lineTo(particle.xt, particle.yt);
-          particle.x = particle.xt;
-          particle.y = particle.yt;
+          this.context.moveTo(particle.x1, particle.y1);
+          this.context.lineTo(particle.x2, particle.y2);
+          particle.x1 = particle.x2;
+          particle.y1 = particle.y2;
         });
 
         this.context.stroke();

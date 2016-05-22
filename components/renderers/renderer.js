@@ -22,12 +22,15 @@ const NULL_WIND_VECTOR = [NaN, NaN, null];
 
 
 export class Renderer {
-  constructor(canvas, extent) {
+  constructor(canvas, extent, context) {
     // Canvas element.
     this.canvas = canvas;
 
     // Returns map boundaries extent.
     this.extent = extent;
+
+    // Canvas context.
+    this.context = context;
 
     // Some default palettes.
     this.palettes = palettes;
@@ -44,6 +47,11 @@ export class Renderer {
     // The map boundaries.
     this.mapBounds_ = null;
 
+    // Holds all the particles as length 6 vectors in an array.
+    this.particleVectors_ = [];
+
+    // Holds an RGB color scheme.
+    this.rgbColorScheme_ = {};
 
     // Configurable fields for the user.
     this.config_ = {
@@ -60,15 +68,12 @@ export class Renderer {
     };
 
     // Determine the context type.
-    const contextType = getContextType(canvas);
-    if (contextType) {
-      this.context = canvas.getContext(contextType);
-    } else if (canvas) {
-      throw new Error('Browser does not support canvas.');
-    } else if (!canvas) {
+    if (!canvas) {
       throw new Error('Must provide an HTMLCanvasElement.');
     } else if (!extent) {
       throw new Error('Must provide an extent function.');
+    } else if (!context) {
+      throw new Error('Must provide a canvas context.');
     }
   }
 
@@ -252,8 +257,8 @@ export class Renderer {
     // UNDONE: this method is terrible
     field.randomize = (particle) => {
       return Object.assign(particle, {
-        x: Math.round(Math.floor(Math.random() * bounds.width) + bounds.x),
-        y: Math.round(Math.floor(Math.random() * bounds.height) + bounds.y)
+        x1: Math.round(Math.floor(Math.random() * bounds.width) + bounds.x),
+        y1: Math.round(Math.floor(Math.random() * bounds.height) + bounds.y)
       });
     };
 
@@ -313,6 +318,7 @@ export class Renderer {
    * Moves the wind particles.
    */
   evolve_(buckets, particles) {
+    this.particleVectors_.length = 0;
     buckets.forEach(bucket => { bucket.length = 0; });
 
     particles.forEach(particle => {
@@ -321,25 +327,36 @@ export class Renderer {
       }
 
       // Vector at current position.
-      const vector = this.field_(particle.x, particle.y);
+      const vector = this.field_(particle.x1, particle.y1);
 
       if (vector[2] === null) {
         // Particle has escaped the grid, never to return.
         particle.age = MAX_PARTICLE_AGE;
       } else {
-        const xt = particle.x + vector[0];
-        const yt = particle.y + vector[1];
+        const x2 = particle.x1 + vector[0];
+        const y2 = particle.y1 + vector[1];
 
-        if (this.field_(xt, yt)[2] !== null) {
+        if (this.field_(x2, y2)[2] !== null) {
           // Path from (x,y) to (xt,yt) is visible, so add this particle to
           // the appropriate draw bucket.
-          particle.xt = xt;
-          particle.yt = yt;
-          buckets[this.config_.colorScheme.indexFor(vector[2])].push(particle);
+          particle.x2 = x2;
+          particle.y2 = y2;
+
+          const colorIndex = this.config_.colorScheme.indexFor(vector[2]);
+          const rgba = this.rgbColorScheme_.get(colorIndex);
+
+          buckets[colorIndex].push(particle);
+
+          this.particleVectors_.push(particle.x1 * this.resolution);
+          this.particleVectors_.push(particle.y1 * this.resolution);
+          rgba.forEach(v => { this.particleVectors_.push(v); });
+          this.particleVectors_.push(particle.x2 * this.resolution);
+          this.particleVectors_.push(particle.y2 * this.resolution);
+          rgba.forEach(v => { this.particleVectors_.push(v); });
         } else {
           // Particle isn't visible, but it still moves through the field.
-          particle.x = xt;
-          particle.y = yt;
+          particle.x1 = x2;
+          particle.y1 = y2;
         }
       }
       particle.age += 1;
@@ -357,10 +374,23 @@ export class Renderer {
         Math.min(m, MAX_WIND_INTENSITY) / MAX_WIND_INTENSITY * length);
     };
 
+    this.rgbColorScheme_ = {
+      colors: this.config_.colorScheme.map(hex => {
+        hex = hex.replace('#','');
+        const r = parseInt(hex.substring(0,2), 16);
+        const g = parseInt(hex.substring(2,4), 16);
+        const b = parseInt(hex.substring(4,6), 16);
+
+        return [r, g, b, 255];
+      }),
+      get: (index) => {
+        return this.rgbColorScheme_.colors[index];
+      }
+    }
+
     const buckets = this.config_.colorScheme.map(Array);
-    const particleCount = numPoints * this.config_.particleReduction
     const particles = [];
-    for (let i = 0; i < particleCount; i++) {
+    for (let i = 0; i < numPoints * this.config_.particleReduction; i++) {
       particles.push(this.field_.randomize({
         age: Math.floor(Math.random() * MAX_PARTICLE_AGE)
       }));
@@ -370,19 +400,15 @@ export class Renderer {
     this.prepare_();
 
     const frame = () => {
-      try {
-        if (!this.stopped_) {
-          counter += 1;
-          if (counter >= 1000) {
-            counter = 0;
-            this.clear_();
-          }
-          this.currentFrame_ = getAnimationFrame(frame);
-          this.evolve_(buckets, particles);
-          this.draw_(buckets, bounds);
+      if (!this.stopped_) {
+        counter += 1;
+        if (counter >= 1000) {
+          counter = 0;
+          this.clear_();
         }
-      } catch (e) {
-        console.error(e);
+        this.currentFrame_ = getAnimationFrame(frame);
+        this.evolve_(buckets, particles);
+        this.draw_(buckets, bounds);
       }
     };
 
@@ -413,16 +439,4 @@ export class Renderer {
   draw_() {
     return this;
   }
-};
-
-export function getContextType(canvas) {
-  let contextType = null;
-  for (let type of ['webgl', 'webgl-experimental', '2d']) {
-    if (canvas.getContext(type)) {
-      contextType = type;
-      break;
-    }
-  }
-
-  return contextType;
 };
