@@ -22,7 +22,7 @@ export class WebGLRenderer extends Renderer {
     this.gl.linkProgram(this.particlesProgram);
 
     this.gl.enable(this.gl.BLEND);
-    this.gl.blendEquation(this.gl.FUNC_ADD);
+    this.gl.blendEquation(this.gl.FUNC_SUBTRACT);
 
     canvas.addEventListener('webglcontextlost', e => this.onContextLost_(e));
     canvas.addEventListener('webglcontextrestored', e => this.onContextRestored_(e));
@@ -51,7 +51,7 @@ export class WebGLRenderer extends Renderer {
   }
 
   blendLayers_() {
-    this.gl.blendFunc(this.gl.DST_ALPHA, this.gl.ONE_MINUS_DST_ALPHA);
+    this.gl.blendFunc(this.gl.ZERO, this.gl.SRC_ALPHA);
     this.gl.useProgram(this.rectProgram);
 
     const positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');

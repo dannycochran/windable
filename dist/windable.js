@@ -135,7 +135,7 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     _this.gl.linkProgram(_this.particlesProgram);
 
     _this.gl.enable(_this.gl.BLEND);
-    _this.gl.blendEquation(_this.gl.FUNC_ADD);
+    _this.gl.blendEquation(_this.gl.FUNC_SUBTRACT);
 
     canvas.addEventListener('webglcontextlost', function (e) {
       return _this.onContextLost_(e);
@@ -175,7 +175,7 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
   }, {
     key: 'blendLayers_',
     value: function blendLayers_() {
-      this.gl.blendFunc(this.gl.DST_ALPHA, this.gl.ONE_MINUS_DST_ALPHA);
+      this.gl.blendFunc(this.gl.ZERO, this.gl.SRC_ALPHA);
       this.gl.useProgram(this.rectProgram);
 
       var positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
@@ -1136,7 +1136,7 @@ var WindMap = exports.WindMap = function () {
 
     _classCallCheck(this, WindMap);
 
-    var contextType = '2d';
+    var contextType = config.contextType || getContextType();
     var context = config.canvas.getContext(contextType);
 
     if (contextType.indexOf('2d') > -1) {
@@ -1150,7 +1150,7 @@ var WindMap = exports.WindMap = function () {
     });
 
     function getContextType() {
-      var _arr = ['webgl-2d', 'webgl', 'webgl-experimental', '2d'];
+      var _arr = ['webgl', 'webgl-experimental', '2d'];
 
       for (var _i = 0; _i < _arr.length; _i++) {
         var type = _arr[_i];

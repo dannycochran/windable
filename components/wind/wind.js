@@ -14,7 +14,7 @@ export class WindMap {
    * @param {!ConfigPayload} config An instance of ConfigPayload.
    */
   constructor(config) {
-    const contextType = '2d';
+    const contextType = config.contextType || getContextType();
     const context = config.canvas.getContext(contextType);
 
     if (contextType.indexOf('2d') > -1) {
@@ -28,7 +28,7 @@ export class WindMap {
     });
 
     function getContextType() {
-      for (let type of ['webgl-2d', 'webgl', 'webgl-experimental', '2d']) {
+      for (let type of ['webgl', 'webgl-experimental', '2d']) {
         if (config.canvas.getContext(type)) {
           return type;
         }
