@@ -33,7 +33,7 @@ const MAX_WIND_INTENSITY = 30;
 // Max number of frames a particle is drawn before regeneration.
 const MAX_PARTICLE_AGE = 100;
 
-// Singleton for no wind in the form: [u, v, magnitude].
+// Singleton for no wind in the form: [u, v, m/s].
 const NULL_WIND_VECTOR = [NaN, NaN, null];
 
 
@@ -59,9 +59,6 @@ export class Renderer {
 
     // The particle field.
     this.field_ = null;
-
-    // Build a vector from lat,lng
-    this.buildVector_ = null;
 
     // The map boundaries.
     this.mapBounds_ = null;
@@ -104,7 +101,7 @@ export class Renderer {
    * Updates the wind animation with new configurations.
    * @param {!ConfigPayload} A ConfigPayload instance. 
    */
-  start(config) {
+  start_(config) {
     const extent = this.extent();
 
     const width = extent.width;
@@ -148,6 +145,7 @@ export class Renderer {
     const grid = this.buildGrid_(this.data_);
     const builtBounds = this.buildBounds_(bounds, width, height);
 
+    this.grid_ = grid;
     this.field_ = this.interpolateField_(grid, builtBounds, this.mapBounds_);
 
     this.stopped_ = false;
@@ -158,7 +156,7 @@ export class Renderer {
   /**
    * Stops and clears the wind animation.
    */
-  stop() {
+  stop_() {
     this.clear_();
     this.stopped_ = true;
     if (this.field_) this.field_.release();
@@ -215,7 +213,19 @@ export class Renderer {
       grid[j] = row;
     }
 
-    const buildVector = (i, j) => {
+    /**
+     * Returns a [u, v, m/s] array from lng and latitude.
+     * @param {number} λ A longitude value from -180 to 180.
+     * @param {number} φ A latitude value from -90 - 90.
+     * @return {!Array<number>} An array [u, v, m/s].
+     */
+    const buildVector = (λ, φ) => {
+      // Calculate longitude index in wrapped range [-180, 180).
+      const i = math.floorMod(λ - λ0, 360) / Δλ;
+
+      // Calculate latitude index in direction +90 to -90.
+      const j = (φ0 - φ) / Δφ;
+
       const fi = Math.floor(i);
       const ci = fi + 1;
       const fj = Math.floor(j);
@@ -239,17 +249,7 @@ export class Renderer {
       return null;
     };
 
-    this.buildVector_ = buildVector.bind(this);
-
-    return function(λ, φ) {
-      // Calculate longitude index in wrapped range [-180, 180).
-      const i = math.floorMod(λ - λ0, 360) / Δλ;
-
-      // Calculate latitude index in direction +90 to -90.
-      const j = (φ0 - φ) / Δφ;
-
-      return buildVector(i, j);
-    };
+    return buildVector.bind(this);
   }
 
 
@@ -273,7 +273,7 @@ export class Renderer {
 
   createField_(columns, bounds) {
     /**
-     * @returns {Array} wind vector [u, v, magnitude] at the point (x, y).
+     * @returns {Array} wind vector [u, v, m/s] at the point (x, y).
      */
     function field(x, y) {
       const column = columns[Math.round(x)];
@@ -449,7 +449,7 @@ export class Renderer {
 
   /**
    * Returns a mapping of color identities to their velocity buckets.
-   * @return {!Array<!Array<string, number>>}
+   * @return {!Array<!Array<string, number>>} [hexColor, velocity]
    */
   velocityScale() {
     const increment = MAX_WIND_INTENSITY / this.config_.colorScheme.length;
@@ -459,39 +459,39 @@ export class Renderer {
       if (idx === this.config_.colorScheme.length) value = this.maxWindSpeed_;
       return [
         color,
-        math.convertMagnitudeToKMPH(value)
+        Math.round(math.convertMagnitudeToKMPH(value))
       ];
     });
   }
+
 
   /**
    * Returns the wind speed & direction at given x,y relative to the canvas
    * element for the current data frame.
    *
-   * @param {!Object} coordinates {x: number, y: number}.
+   * @param {number} x An x value.
+   * @param {number} y A y value.
    * @return {!Array<!number>} [wind direction, speed].
    */
   pointFromXY(x, y) {
-    const test = [40.544888470536456, 4.593271031856287, 40.80424144449116];
-    return math.formatVector(vector);
+    if (!this.field_) throw new Error('Must supply data first.');
+    return math.formatVector(this.field_(x, y));
   }
 
 
   /**
    * Returns the wind speed & direction at given coordinates lat,lng for the
    * current data frame.
-   *
-   * @param {!Object} coordinates {lat: number, lng: number}.
+
+   * @param {number} lat A latitude value.
+   * @param {number} lng A longitude value.
    * @return {!Array<!number>} [wind direction, speed].
    */
   pointFromLatLng(lat, lng) {
-    if (!this.buildVector_) throw new Error('Must supply data first.');
-    lat = Math.min(Math.max(lat + 90, 0), 179);
-    lat = Math.min(Math.max(lat + 180, 0), 359);
-
-    const vector = this.buildVector_(lat, lng, true);
-    return math.formatVector(this.buildVector_(lat, lng));
+    if (!this.grid_) throw new Error('Must supply data first.');
+    return math.formatVector(this.grid_(lng, lat));
   }
+
 
   /**
    * Clear the drawing context. Implementation specific to renderer.

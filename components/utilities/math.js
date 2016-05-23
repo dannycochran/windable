@@ -19,7 +19,7 @@ const floorMod = function(a, n) {
 
 /**
  * Returns wind direction and speed in KMPH.
- * @param {!Array<number>} wind A wind vector [u, v, m]
+ * @param {!Array<number>} wind A wind vector [u, v, m/s]
  * @return {!Array<number>} Returns [wind direction, KMPH]
  */
 const formatVector = function(wind) {
@@ -60,7 +60,7 @@ const rad2deg = function(radians) {
 
 
 /**
- * Interpolation for vectors like wind (u,v,m).
+ * Interpolation for vectors like wind (u,v,m/s).
  */
 const bilinearInterpolateVector = function(x, y, g00, g10, g01, g11) {
   const rx = (1 - x);

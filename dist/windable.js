@@ -330,7 +330,7 @@ var MAX_WIND_INTENSITY = 30;
 // Max number of frames a particle is drawn before regeneration.
 var MAX_PARTICLE_AGE = 100;
 
-// Singleton for no wind in the form: [u, v, magnitude].
+// Singleton for no wind in the form: [u, v, m/s].
 var NULL_WIND_VECTOR = [NaN, NaN, null];
 
 var Renderer = exports.Renderer = function () {
@@ -357,9 +357,6 @@ var Renderer = exports.Renderer = function () {
 
     // The particle field.
     this.field_ = null;
-
-    // Build a vector from lat,lng
-    this.buildVector_ = null;
 
     // The map boundaries.
     this.mapBounds_ = null;
@@ -404,8 +401,8 @@ var Renderer = exports.Renderer = function () {
 
 
   _createClass(Renderer, [{
-    key: 'start',
-    value: function start(config) {
+    key: 'start_',
+    value: function start_(config) {
       var extent = this.extent();
 
       var width = extent.width;
@@ -448,6 +445,7 @@ var Renderer = exports.Renderer = function () {
       var grid = this.buildGrid_(this.data_);
       var builtBounds = this.buildBounds_(bounds, width, height);
 
+      this.grid_ = grid;
       this.field_ = this.interpolateField_(grid, builtBounds, this.mapBounds_);
 
       this.stopped_ = false;
@@ -459,8 +457,8 @@ var Renderer = exports.Renderer = function () {
      */
 
   }, {
-    key: 'stop',
-    value: function stop() {
+    key: 'stop_',
+    value: function stop_() {
       this.clear_();
       this.stopped_ = true;
       if (this.field_) this.field_.release();
@@ -523,7 +521,19 @@ var Renderer = exports.Renderer = function () {
         grid[j] = row;
       }
 
-      var buildVector = function buildVector(i, j) {
+      /**
+       * Returns a [u, v, m/s] array from lng and latitude.
+       * @param {number} λ A longitude value from -180 to 180.
+       * @param {number} φ A latitude value from -90 - 90.
+       * @return {!Array<number>} An array [u, v, m/s].
+       */
+      var buildVector = function buildVector(λ, φ) {
+        // Calculate longitude index in wrapped range [-180, 180).
+        var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
+
+        // Calculate latitude index in direction +90 to -90.
+        var j = (φ0 - φ) / Δφ;
+
         var fi = Math.floor(i);
         var ci = fi + 1;
         var fj = Math.floor(j);
@@ -538,26 +548,16 @@ var Renderer = exports.Renderer = function () {
             var g11 = row[ci];
             if ((0, _functions.isValue)(g01) && (0, _functions.isValue)(g11)) {
               // All four points found, so interpolate the value.
-              var _vector = _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
-              if (_vector[2] > _this.maxWindSpeed_) _this.maxWindSpeed_ = _vector[2];
-              return _vector;
+              var vector = _math.math.bilinearInterpolateVector(i - fi, j - fj, g00, g10, g01, g11);
+              if (vector[2] > _this.maxWindSpeed_) _this.maxWindSpeed_ = vector[2];
+              return vector;
             }
           }
         }
         return null;
       };
 
-      this.buildVector_ = buildVector.bind(this);
-
-      return function (λ, φ) {
-        // Calculate longitude index in wrapped range [-180, 180).
-        var i = _math.math.floorMod(λ - λ0, 360) / Δλ;
-
-        // Calculate latitude index in direction +90 to -90.
-        var j = (φ0 - φ) / Δφ;
-
-        return buildVector(i, j);
-      };
+      return buildVector.bind(this);
     }
 
     /**
@@ -583,7 +583,7 @@ var Renderer = exports.Renderer = function () {
     key: 'createField_',
     value: function createField_(columns, bounds) {
       /**
-       * @returns {Array} wind vector [u, v, magnitude] at the point (x, y).
+       * @returns {Array} wind vector [u, v, m/s] at the point (x, y).
        */
       function field(x, y) {
         var column = columns[Math.round(x)];
@@ -776,7 +776,7 @@ var Renderer = exports.Renderer = function () {
 
     /**
      * Returns a mapping of color identities to their velocity buckets.
-     * @return {!Array<!Array<string, number>>}
+     * @return {!Array<!Array<string, number>>} [hexColor, velocity]
      */
 
   }, {
@@ -789,7 +789,7 @@ var Renderer = exports.Renderer = function () {
         idx += 1;
         var value = idx * increment;
         if (idx === _this5.config_.colorScheme.length) value = _this5.maxWindSpeed_;
-        return [color, _math.math.convertMagnitudeToKMPH(value)];
+        return [color, Math.round(_math.math.convertMagnitudeToKMPH(value))];
       });
     }
 
@@ -797,34 +797,31 @@ var Renderer = exports.Renderer = function () {
      * Returns the wind speed & direction at given x,y relative to the canvas
      * element for the current data frame.
      *
-     * @param {!Object} coordinates {x: number, y: number}.
+     * @param {number} x An x value.
+     * @param {number} y A y value.
      * @return {!Array<!number>} [wind direction, speed].
      */
 
   }, {
     key: 'pointFromXY',
     value: function pointFromXY(x, y) {
-      var test = [40.544888470536456, 4.593271031856287, 40.80424144449116];
-      return _math.math.formatVector(vector);
+      if (!this.field_) throw new Error('Must supply data first.');
+      return _math.math.formatVector(this.field_(x, y));
     }
 
     /**
      * Returns the wind speed & direction at given coordinates lat,lng for the
      * current data frame.
-     *
-     * @param {!Object} coordinates {lat: number, lng: number}.
+      * @param {number} lat A latitude value.
+     * @param {number} lng A longitude value.
      * @return {!Array<!number>} [wind direction, speed].
      */
 
   }, {
     key: 'pointFromLatLng',
     value: function pointFromLatLng(lat, lng) {
-      if (!this.buildVector_) throw new Error('Must supply data first.');
-      lat = Math.min(Math.max(lat + 90, 0), 179);
-      lat = Math.min(Math.max(lat + 180, 0), 359);
-
-      var vector = this.buildVector_(lat, lng, true);
-      return _math.math.formatVector(this.buildVector_(lat, lng));
+      if (!this.grid_) throw new Error('Must supply data first.');
+      return _math.math.formatVector(this.grid_(lng, lat));
     }
 
     /**
@@ -964,7 +961,7 @@ var floorMod = function floorMod(a, n) {
 
 /**
  * Returns wind direction and speed in KMPH.
- * @param {!Array<number>} wind A wind vector [u, v, m]
+ * @param {!Array<number>} wind A wind vector [u, v, m/s]
  * @return {!Array<number>} Returns [wind direction, KMPH]
  */
 var formatVector = function formatVector(wind) {
@@ -1000,7 +997,7 @@ var rad2deg = function rad2deg(radians) {
 };
 
 /**
- * Interpolation for vectors like wind (u,v,m).
+ * Interpolation for vectors like wind (u,v,m/s).
  */
 var bilinearInterpolateVector = function bilinearInterpolateVector(x, y, g00, g10, g01, g11) {
   var rx = 1 - x;
@@ -1148,8 +1145,8 @@ var WindMap = exports.WindMap = function () {
       this.renderer = new _gl.WebGLRenderer(config.canvas, config.extent, context);
     }
 
-    this.startRenderer_ = (0, _functions.debounce)(function (config) {
-      _this.renderer.start(config);
+    this.debounceStart_ = (0, _functions.debounce)(function (config) {
+      _this.renderer.start_(config);
     });
 
     function getContextType() {
@@ -1173,13 +1170,15 @@ var WindMap = exports.WindMap = function () {
   _createClass(WindMap, [{
     key: 'stop',
     value: function stop() {
-      this.renderer.stop();
+      this.renderer.stop_();
       return this;
     }
 
     /**
      * Starts the WindMap animation.
      * @param {!ConfigPayload=} config An instance of ConfigPayload.
+     * @param {boolean=} renderImmediately Whether to render immediately instead
+     *    of debouncing.
      * @return {!WindMap} The windmap instance.
      */
 
@@ -1187,14 +1186,18 @@ var WindMap = exports.WindMap = function () {
     key: 'start',
     value: function start() {
       var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+      var renderImmediately = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
-      this.startRenderer_(config);
+      if (renderImmediately) this.renderer.start_(config);else this.debounceStart_(config);
+
       return this;
     }
 
     /**
      * Updates the WindMap data and its optional configurations.
      * @param {!ConfigPayload=} config An instance of ConfigPayload.
+     * @param {boolean=} renderImmediately Whether to render immediately instead
+     *    of debouncing.
      * @return {!WindMap} The windmap instance.
      */
 
@@ -1202,8 +1205,9 @@ var WindMap = exports.WindMap = function () {
     key: 'update',
     value: function update() {
       var config = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+      var renderImmediately = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
-      return this.stop().start(config);
+      return this.stop().start(config, renderImmediately);
     }
   }]);
 

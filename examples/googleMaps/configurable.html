@@ -48,6 +48,39 @@
       #speed-menu {
         top: 250px;
       }
+
+      #velocity-label {
+        position: absolute;
+        bottom: 85px;
+        left: 20px;
+        padding: 5px;
+        background-color: white;
+      }
+      #velocity-scale {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        display: flex;
+        flex-flow: row nowrap;
+        list-style: none;
+        background-color: white;
+        padding-left: 0;
+      }
+      #velocity-scale > li {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        flex-flow: column nowrap;
+        border-right: 1px solid lightgrey;
+        font-size: 10px;
+      }
+      #velocity-scale > li span {
+        display: inline-block;
+        flex: 0 0 auto;
+        height: 25px;
+        text-align: center;
+        line-height: 25px;
+      }
     </style>
   </head>
 
@@ -73,6 +106,10 @@
       <label>Particle Speed</label>
       <input id="speed-range" type="range" step="1" max="1000" value="50">
     </div>
+
+    <label id="velocity-label">Wind Velocity (km / h)</label>
+    <ul id="velocity-scale">
+    </ul>
 
     <script type="text/javascript">
       window.onload = function() {
@@ -109,6 +146,7 @@
         const colorsMenu = document.getElementById('color-schemes');
         const particleInput = document.getElementById('particles-range');
         const speedInput = document.getElementById('speed-range');
+        const velocityScale = document.getElementById('velocity-scale');
 
         // Altitude menu.
         const selected = 1000;
@@ -131,10 +169,28 @@
         });
         colorsMenu.selectedIndex = colors.indexOf('Purples');
 
+        // Draw color scale
+        function drawVelocityScale() {
+          const scale = windMap.renderer.velocityScale();
+          velocityScale.innerHTML = '';
+          scale.forEach((s, idx) => {
+            const colorItem = document.createElement('li');
+            velocityScale.appendChild(colorItem);
+
+            const color = colorItem.appendChild(document.createElement('span'));
+            color.style['background-color'] = s[0];
+
+            const label = colorItem.appendChild(document.createElement('span'));
+            const prevValue = scale[idx - 1] ? scale[idx - 1][1] : 0;
+            label.innerHTML = `${prevValue} - ${s[1]}`;
+          });
+        }
+
         // Event handlers.
         const onSelectColor = function(e) {
           const selectedIndex = colorsMenu.selectedIndex;
-          windMap.update({colorScheme: palettes[colors[selectedIndex]]});
+          windMap.update({colorScheme: palettes[colors[selectedIndex]]}, true);
+          drawVelocityScale();
         };
 
         const onSelectAltitude = function(e) {
@@ -152,6 +208,12 @@
           windMap.update({velocityScale: value || 0.0000001});
         };
 
+        element.addEventListener('mousedown', function(e) {
+          const x = e.pageX - this.offsetLeft;
+          const y = e.pageY - this.offsetTop;
+          console.log(x, y);
+          console.log(windMap.renderer.pointFromXY(x, y));
+        });
         altitudeMenu.addEventListener('change', onSelectAltitude);
         colorsMenu.addEventListener('change', onSelectColor);
         speedInput.addEventListener('change', onChangeParticleSpeed);
@@ -161,7 +223,8 @@
         function fetchData(millibars) {
           const mapDataUrl = `https://raw.githubusercontent.com/dannycochran/windable/master/data/2016040900_${millibars}.json`
           d3.json(mapDataUrl, (err, windData) => {
-            windMap.update({data: windData});
+            windMap.update({data: windData}, true);
+            drawVelocityScale();
             altitudeMenu.disabled = false;
           });
         }

@@ -23,8 +23,8 @@ export class WindMap {
       this.renderer = new WebGLRenderer(config.canvas, config.extent, context);
     }
 
-    this.startRenderer_ = debounce((config) => {
-      this.renderer.start(config);
+    this.debounceStart_ = debounce((config) => {
+      this.renderer.start_(config);
     });
 
     function getContextType() {
@@ -42,7 +42,7 @@ export class WindMap {
    * @return {!WindMap} The windmap instance.
    */
   stop() {
-    this.renderer.stop();
+    this.renderer.stop_();
     return this;
   }
 
@@ -50,10 +50,14 @@ export class WindMap {
   /**
    * Starts the WindMap animation.
    * @param {!ConfigPayload=} config An instance of ConfigPayload.
+   * @param {boolean=} renderImmediately Whether to render immediately instead
+   *    of debouncing.
    * @return {!WindMap} The windmap instance.
    */
-  start(config={}) {
-    this.startRenderer_(config);
+  start(config={}, renderImmediately=false) {
+    if (renderImmediately) this.renderer.start_(config);
+    else this.debounceStart_(config);
+
     return this;
   }
 
@@ -61,9 +65,11 @@ export class WindMap {
   /**
    * Updates the WindMap data and its optional configurations.
    * @param {!ConfigPayload=} config An instance of ConfigPayload.
+   * @param {boolean=} renderImmediately Whether to render immediately instead
+   *    of debouncing.
    * @return {!WindMap} The windmap instance.
    */
-  update(config={}) {
-    return this.stop().start(config);
+  update(config={}, renderImmediately=false) {
+    return this.stop().start(config, renderImmediately);
   }
 };
