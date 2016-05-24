@@ -2,7 +2,7 @@
 
 Windable is a small (6kb gzipped) configurable library for setting up wind visualizations on your maps.
 It can work with any Canvas map layer (Google Maps, Leaflet).
-Windable uses WebGL if possible, and canvas as a default. Windable reuses the rendering logic from earth.nullschool, providing an abstraction to more easily configure your maps. 
+Windable uses WebGL if possible, and canvas as a default. Windable reuses the rendering logic from [earth.nullschool](https://github.com/cambecc/earth/tree/master/public/libs/earth/1.0.0), providing an abstraction to more easily configure your maps. 
 
 The source code is annotated (but not compiled) with ClosureJS style comments.
 
