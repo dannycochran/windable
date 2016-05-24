@@ -1,8 +1,8 @@
 # Windable (v0.0.1)
 
-Windable is a small (4kb gzipped) configurable library for setting up wind visualizations on your maps.
+Windable is a small (6kb gzipped) configurable library for setting up wind visualizations on your maps.
 It can work with any Canvas map layer (Google Maps, Leaflet).
-Windable uses the same rendering logic from earth.nullschool and Esri's windy.js, providing an abstraction to more easily configure your maps.
+Windable uses WebGL if possible, and canvas as a default. Windable reuses the rendering logic from earth.nullschool, providing an abstraction to more easily configure your maps. 
 
 The source code is annotated (but not compiled) with ClosureJS style comments.
 
@@ -72,6 +72,28 @@ windMap.update({
 ```
 
 See ConfigPayload in [components/wind/typedefs.js](https://github.com/dannycochran/windable/blob/master/components/wind/typedefs.js) for a list of configurations.
+
+windMap also has a renderer property that exposes information about wind velocity.
+
+To return a mapping of colors to their wind velocity (km / h):
+
+```javascript
+windMap.renderer.velocityScale();
+```
+
+To return a tuple of [wind direction, wind speed (km /h)] from x,y:
+
+```javascript
+canvas.on('click', (e) => {
+  windMap.renderer.pointFromXY(e.pageX, e.pageY);
+});
+```
+
+To return a tuple of [wind direction, wind speed (km /h)] from lat, lng:
+
+```javascript
+windMap.renderer.pointFromLatLng(-40, 60);
+```
 
 # Wind Data
 

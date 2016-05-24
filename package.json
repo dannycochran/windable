@@ -19,8 +19,7 @@
     "grunt-contrib-copy": "1.0.0",
     "grunt-contrib-uglify": "1.0.1",
     "grunt-contrib-watch": "1.0.0",
-    "grunt-nodemon": "0.4.1",
-    "sassify": "0.10.0"
+    "grunt-nodemon": "0.4.1"
   },
   "engines": {
     "node": "4.4.1"
