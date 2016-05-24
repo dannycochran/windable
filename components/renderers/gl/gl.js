@@ -18,11 +18,12 @@ export class WebGLRenderer extends Renderer {
     this.scale = 1;
     this.NUM_ATTRS = 6;
 
-    this.gl.linkProgram(this.rectProgram);
     this.gl.linkProgram(this.particlesProgram);
+    this.gl.linkProgram(this.rectProgram);
 
     this.gl.enable(this.gl.BLEND);
-    this.gl.blendEquation(this.gl.FUNC_SUBTRACT);
+    this.gl.blendEquation(this.gl.FUNC_ADD);
+    this.gl.disable(this.gl.DEPTH_TEST);
 
     canvas.addEventListener('webglcontextlost', e => this.onContextLost_(e));
     canvas.addEventListener('webglcontextrestored', e => this.onContextRestored_(e));
@@ -47,6 +48,14 @@ export class WebGLRenderer extends Renderer {
 
   prepare_() {
     this.clear_();
+
+    const lineWidthRange = this.gl.getParameter(this.gl.ALIASED_LINE_WIDTH_RANGE);
+    const lineWidth = this.config_.particleWidth * Math.abs(this.scale * this.resolution);
+    const lineWidthInRange = Math.min(Math.max(lineWidth, lineWidthRange[0]), lineWidthRange[1]);
+
+    this.gl.lineWidth(lineWidthInRange);
+    const buffer = this.gl.createBuffer();
+    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
     return this;
   }
 
@@ -55,17 +64,16 @@ export class WebGLRenderer extends Renderer {
     this.gl.useProgram(this.rectProgram);
 
     const positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
-    const buffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+
     this.gl.bufferData(
         this.gl.ARRAY_BUFFER, 
         new Float32Array([
-            -1.0, -1.0, 
-             1.0, -1.0, 
-            -1.0,  1.0, 
-            -1.0,  1.0, 
-             1.0, -1.0, 
-             1.0,  1.0]), 
+            -1.0, -1.0,
+             1.0, -1.0,
+            -1.0,  1.0,
+            -1.0,  1.0,
+             1.0, -1.0,
+             1.0,  1.0]),
         this.gl.STATIC_DRAW);
     this.gl.enableVertexAttribArray(positionLocation);
     this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
@@ -78,10 +86,8 @@ export class WebGLRenderer extends Renderer {
 
     this.gl.useProgram(this.particlesProgram);
 
-    const buffer = this.gl.createBuffer();
     const particlesBuffer = new Float32Array(this.particleVectors_);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
     this.gl.bufferData(this.gl.ARRAY_BUFFER, particlesBuffer, this.gl.STATIC_DRAW);
 
     const resolutionLocation = this.gl.getUniformLocation(this.particlesProgram, 'u_resolution');
@@ -96,11 +102,6 @@ export class WebGLRenderer extends Renderer {
     this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, this.NUM_ATTRS  * Float32Array.BYTES_PER_ELEMENT, 0);
     this.gl.vertexAttribPointer(rgbaLocation, 4, this.gl.FLOAT, false, this.NUM_ATTRS  * Float32Array.BYTES_PER_ELEMENT, 8);
 
-    const lineWidthRange = this.gl.getParameter(this.gl.ALIASED_LINE_WIDTH_RANGE);
-    const lineWidth = this.config_.particleWidth * Math.abs(this.scale * this.resolution);
-    const lineWidthInRange = Math.min(Math.max(lineWidth, lineWidthRange[0]), lineWidthRange[1]);
-
-    this.gl.lineWidth(lineWidthInRange);
     this.gl.drawArrays(this.gl.LINES, 0, this.particleVectors_.length / this.NUM_ATTRS);
 
     return this;
@@ -108,7 +109,7 @@ export class WebGLRenderer extends Renderer {
 
   clear_() {
     super.clear_();
-    this.context.clear(this.context.COLOR_BUFFER_BIT);
+    // this.context.clear(this.context.COLOR_BUFFER_BIT);
     this.context.viewport(0, 0, this.context.drawingBufferWidth, this.context.drawingBufferHeight);
     return this;
   }

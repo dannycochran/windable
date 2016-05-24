@@ -131,11 +131,12 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     _this.scale = 1;
     _this.NUM_ATTRS = 6;
 
-    _this.gl.linkProgram(_this.rectProgram);
     _this.gl.linkProgram(_this.particlesProgram);
+    _this.gl.linkProgram(_this.rectProgram);
 
     _this.gl.enable(_this.gl.BLEND);
-    _this.gl.blendEquation(_this.gl.FUNC_SUBTRACT);
+    _this.gl.blendEquation(_this.gl.FUNC_ADD);
+    _this.gl.disable(_this.gl.DEPTH_TEST);
 
     canvas.addEventListener('webglcontextlost', function (e) {
       return _this.onContextLost_(e);
@@ -170,6 +171,14 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     key: 'prepare_',
     value: function prepare_() {
       this.clear_();
+
+      var lineWidthRange = this.gl.getParameter(this.gl.ALIASED_LINE_WIDTH_RANGE);
+      var lineWidth = this.config_.particleWidth * Math.abs(this.scale * this.resolution);
+      var lineWidthInRange = Math.min(Math.max(lineWidth, lineWidthRange[0]), lineWidthRange[1]);
+
+      this.gl.lineWidth(lineWidthInRange);
+      var buffer = this.gl.createBuffer();
+      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
       return this;
     }
   }, {
@@ -179,8 +188,7 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
       this.gl.useProgram(this.rectProgram);
 
       var positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
-      var buffer = this.gl.createBuffer();
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+
       this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), this.gl.STATIC_DRAW);
       this.gl.enableVertexAttribArray(positionLocation);
       this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
@@ -194,10 +202,8 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
 
       this.gl.useProgram(this.particlesProgram);
 
-      var buffer = this.gl.createBuffer();
       var particlesBuffer = new Float32Array(this.particleVectors_);
 
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
       this.gl.bufferData(this.gl.ARRAY_BUFFER, particlesBuffer, this.gl.STATIC_DRAW);
 
       var resolutionLocation = this.gl.getUniformLocation(this.particlesProgram, 'u_resolution');
@@ -212,11 +218,6 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
       this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, this.NUM_ATTRS * Float32Array.BYTES_PER_ELEMENT, 0);
       this.gl.vertexAttribPointer(rgbaLocation, 4, this.gl.FLOAT, false, this.NUM_ATTRS * Float32Array.BYTES_PER_ELEMENT, 8);
 
-      var lineWidthRange = this.gl.getParameter(this.gl.ALIASED_LINE_WIDTH_RANGE);
-      var lineWidth = this.config_.particleWidth * Math.abs(this.scale * this.resolution);
-      var lineWidthInRange = Math.min(Math.max(lineWidth, lineWidthRange[0]), lineWidthRange[1]);
-
-      this.gl.lineWidth(lineWidthInRange);
       this.gl.drawArrays(this.gl.LINES, 0, this.particleVectors_.length / this.NUM_ATTRS);
 
       return this;
@@ -225,7 +226,7 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     key: 'clear_',
     value: function clear_() {
       _get(Object.getPrototypeOf(WebGLRenderer.prototype), 'clear_', this).call(this);
-      this.context.clear(this.context.COLOR_BUFFER_BIT);
+      // this.context.clear(this.context.COLOR_BUFFER_BIT);
       this.context.viewport(0, 0, this.context.drawingBufferWidth, this.context.drawingBufferHeight);
       return this;
     }
@@ -1136,13 +1137,12 @@ var WindMap = exports.WindMap = function () {
 
     _classCallCheck(this, WindMap);
 
-    var contextType = config.contextType || getContextType();
-    var context = config.canvas.getContext(contextType);
+    var context = getContextType();
 
-    if (contextType.indexOf('2d') > -1) {
-      this.renderer = new _canvas.CanvasRenderer(config.canvas, config.extent, context);
-    } else if (contextType.indexOf('webgl') > -1) {
-      this.renderer = new _gl.WebGLRenderer(config.canvas, config.extent, context);
+    if (context.type.indexOf('2d') > -1) {
+      this.renderer = new _canvas.CanvasRenderer(config.canvas, config.extent, context.renderer);
+    } else if (context.type.indexOf('webgl') > -1) {
+      this.renderer = new _gl.WebGLRenderer(config.canvas, config.extent, context.renderer);
     }
 
     this.debounceStart_ = (0, _functions.debounce)(function (config) {
@@ -1154,8 +1154,12 @@ var WindMap = exports.WindMap = function () {
 
       for (var _i = 0; _i < _arr.length; _i++) {
         var type = _arr[_i];
-        if (config.canvas.getContext(type)) {
-          return type;
+        var _context = {
+          type: type,
+          renderer: config.canvas.getContext(type, { preserveDrawingBuffer: true })
+        };
+        if (_context.renderer) {
+          return _context;
         }
       }
     };

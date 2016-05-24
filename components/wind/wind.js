@@ -14,13 +14,12 @@ export class WindMap {
    * @param {!ConfigPayload} config An instance of ConfigPayload.
    */
   constructor(config) {
-    const contextType = config.contextType || getContextType();
-    const context = config.canvas.getContext(contextType);
+    const context = getContextType();
 
-    if (contextType.indexOf('2d') > -1) {
-      this.renderer = new CanvasRenderer(config.canvas, config.extent, context);
-    } else if (contextType.indexOf('webgl') > -1) {
-      this.renderer = new WebGLRenderer(config.canvas, config.extent, context);
+    if (context.type.indexOf('2d') > -1) {
+      this.renderer = new CanvasRenderer(config.canvas, config.extent, context.renderer);
+    } else if (context.type.indexOf('webgl') > -1) {
+      this.renderer = new WebGLRenderer(config.canvas, config.extent, context.renderer);
     }
 
     this.debounceStart_ = debounce((config) => {
@@ -29,8 +28,12 @@ export class WindMap {
 
     function getContextType() {
       for (let type of ['webgl', 'webgl-experimental', '2d']) {
-        if (config.canvas.getContext(type)) {
-          return type;
+        const context = {
+          type: type,
+          renderer: config.canvas.getContext(type, {preserveDrawingBuffer: true})
+        };
+        if (context.renderer) {
+          return context;
         }
       }
     };
