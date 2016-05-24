@@ -12,11 +12,9 @@ export class WebGLRenderer extends Renderer {
     super(canvas, extent, context);
 
     this.gl = context;
+
     this.particlesProgram = this.createProgram_(particleVert, particleFrag);
     this.rectProgram = this.createProgram_(rectVert, rectFrag);
-    this.resolution = window.devicePixelRatio || 1;
-    this.scale = 1;
-    this.NUM_ATTRS = 6;
 
     this.gl.linkProgram(this.particlesProgram);
     this.gl.linkProgram(this.rectProgram);
@@ -49,21 +47,19 @@ export class WebGLRenderer extends Renderer {
   prepare_() {
     this.clear_();
 
-    const lineWidthRange = this.gl.getParameter(this.gl.ALIASED_LINE_WIDTH_RANGE);
-    const lineWidth = this.config_.particleWidth * Math.abs(this.scale * this.resolution);
-    const lineWidthInRange = Math.min(Math.max(lineWidth, lineWidthRange[0]), lineWidthRange[1]);
-
-    this.gl.lineWidth(lineWidthInRange);
     const buffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+    this.gl.lineWidth(this.config_.particleWidth);
+
     return this;
   }
 
-  blendLayers_() {
+  draw_(buckets, bounds) {
+    // Blend the existing layers.
     this.gl.blendFunc(this.gl.ZERO, this.gl.SRC_ALPHA);
     this.gl.useProgram(this.rectProgram);
 
-    const positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
+    const rectLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
 
     this.gl.bufferData(
         this.gl.ARRAY_BUFFER, 
@@ -75,17 +71,13 @@ export class WebGLRenderer extends Renderer {
              1.0, -1.0,
              1.0,  1.0]),
         this.gl.STATIC_DRAW);
-    this.gl.enableVertexAttribArray(positionLocation);
-    this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
+    this.gl.enableVertexAttribArray(rectLocation);
+    this.gl.vertexAttribPointer(rectLocation, 2, this.gl.FLOAT, false, 0, 0);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+
+    // Draw the particles.
     this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-  }
-
-  draw_(buckets, bounds) {
-    this.blendLayers_();
-
     this.gl.useProgram(this.particlesProgram);
-
     const particlesBuffer = new Float32Array(this.particleVectors_);
 
     this.gl.bufferData(this.gl.ARRAY_BUFFER, particlesBuffer, this.gl.STATIC_DRAW);
@@ -99,17 +91,17 @@ export class WebGLRenderer extends Renderer {
     this.gl.enableVertexAttribArray(positionLocation);
     this.gl.enableVertexAttribArray(rgbaLocation);
 
-    this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, this.NUM_ATTRS  * Float32Array.BYTES_PER_ELEMENT, 0);
-    this.gl.vertexAttribPointer(rgbaLocation, 4, this.gl.FLOAT, false, this.NUM_ATTRS  * Float32Array.BYTES_PER_ELEMENT, 8);
+    this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 6  * Float32Array.BYTES_PER_ELEMENT, 0);
+    this.gl.vertexAttribPointer(rgbaLocation, 4, this.gl.FLOAT, false, 6  * Float32Array.BYTES_PER_ELEMENT, 8);
 
-    this.gl.drawArrays(this.gl.LINES, 0, this.particleVectors_.length / this.NUM_ATTRS);
+    this.gl.drawArrays(this.gl.LINES, 0, this.particleVectors_.length / 6);
 
     return this;
   }
 
   clear_() {
     super.clear_();
-    // this.context.clear(this.context.COLOR_BUFFER_BIT);
+    this.context.clear(this.context.COLOR_BUFFER_BIT);
     this.context.viewport(0, 0, this.context.drawingBufferWidth, this.context.drawingBufferHeight);
     return this;
   }

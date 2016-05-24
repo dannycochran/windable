@@ -61,8 +61,6 @@ var CanvasRenderer = exports.CanvasRenderer = function (_Renderer) {
           bucket.forEach(function (particle) {
             _this2.context.moveTo(particle.x1, particle.y1);
             _this2.context.lineTo(particle.x2, particle.y2);
-            particle.x1 = particle.x2;
-            particle.y1 = particle.y2;
           });
 
           _this2.context.stroke();
@@ -125,11 +123,9 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WebGLRenderer).call(this, canvas, extent, context));
 
     _this.gl = context;
+
     _this.particlesProgram = _this.createProgram_(_shaders.particleVert, _shaders.particleFrag);
     _this.rectProgram = _this.createProgram_(_shaders.rectVert, _shaders.rectFrag);
-    _this.resolution = window.devicePixelRatio || 1;
-    _this.scale = 1;
-    _this.NUM_ATTRS = 6;
 
     _this.gl.linkProgram(_this.particlesProgram);
     _this.gl.linkProgram(_this.rectProgram);
@@ -172,36 +168,29 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     value: function prepare_() {
       this.clear_();
 
-      var lineWidthRange = this.gl.getParameter(this.gl.ALIASED_LINE_WIDTH_RANGE);
-      var lineWidth = this.config_.particleWidth * Math.abs(this.scale * this.resolution);
-      var lineWidthInRange = Math.min(Math.max(lineWidth, lineWidthRange[0]), lineWidthRange[1]);
-
-      this.gl.lineWidth(lineWidthInRange);
       var buffer = this.gl.createBuffer();
       this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+      this.gl.lineWidth(this.config_.particleWidth);
+
       return this;
-    }
-  }, {
-    key: 'blendLayers_',
-    value: function blendLayers_() {
-      this.gl.blendFunc(this.gl.ZERO, this.gl.SRC_ALPHA);
-      this.gl.useProgram(this.rectProgram);
-
-      var positionLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
-
-      this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), this.gl.STATIC_DRAW);
-      this.gl.enableVertexAttribArray(positionLocation);
-      this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
-      this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
     }
   }, {
     key: 'draw_',
     value: function draw_(buckets, bounds) {
-      this.blendLayers_();
+      // Blend the existing layers.
+      this.gl.blendFunc(this.gl.ZERO, this.gl.SRC_ALPHA);
+      this.gl.useProgram(this.rectProgram);
 
+      var rectLocation = this.gl.getAttribLocation(this.rectProgram, 'a_position');
+
+      this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 1.0]), this.gl.STATIC_DRAW);
+      this.gl.enableVertexAttribArray(rectLocation);
+      this.gl.vertexAttribPointer(rectLocation, 2, this.gl.FLOAT, false, 0, 0);
+      this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+
+      // Draw the particles.
+      this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
       this.gl.useProgram(this.particlesProgram);
-
       var particlesBuffer = new Float32Array(this.particleVectors_);
 
       this.gl.bufferData(this.gl.ARRAY_BUFFER, particlesBuffer, this.gl.STATIC_DRAW);
@@ -215,10 +204,10 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
       this.gl.enableVertexAttribArray(positionLocation);
       this.gl.enableVertexAttribArray(rgbaLocation);
 
-      this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, this.NUM_ATTRS * Float32Array.BYTES_PER_ELEMENT, 0);
-      this.gl.vertexAttribPointer(rgbaLocation, 4, this.gl.FLOAT, false, this.NUM_ATTRS * Float32Array.BYTES_PER_ELEMENT, 8);
+      this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
+      this.gl.vertexAttribPointer(rgbaLocation, 4, this.gl.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 8);
 
-      this.gl.drawArrays(this.gl.LINES, 0, this.particleVectors_.length / this.NUM_ATTRS);
+      this.gl.drawArrays(this.gl.LINES, 0, this.particleVectors_.length / 6);
 
       return this;
     }
@@ -226,7 +215,7 @@ var WebGLRenderer = exports.WebGLRenderer = function (_Renderer) {
     key: 'clear_',
     value: function clear_() {
       _get(Object.getPrototypeOf(WebGLRenderer.prototype), 'clear_', this).call(this);
-      // this.context.clear(this.context.COLOR_BUFFER_BIT);
+      this.context.clear(this.context.COLOR_BUFFER_BIT);
       this.context.viewport(0, 0, this.context.drawingBufferWidth, this.context.drawingBufferHeight);
       return this;
     }
@@ -665,7 +654,7 @@ var Renderer = exports.Renderer = function () {
 
   }, {
     key: 'evolve_',
-    value: function evolve_(buckets, particles) {
+    value: function evolve_(buckets, particles, firstRender) {
       var _this3 = this;
 
       this.particleVectors_.length = 0;
@@ -674,6 +663,11 @@ var Renderer = exports.Renderer = function () {
       });
 
       particles.forEach(function (particle) {
+        if (!firstRender) {
+          particle.x1 = particle.x2;
+          particle.y1 = particle.y2;
+        }
+
         if (particle.age > MAX_PARTICLE_AGE) {
           _this3.field_.randomize(particle).age = 0;
         }
@@ -699,13 +693,13 @@ var Renderer = exports.Renderer = function () {
 
             buckets[colorIndex].push(particle);
 
-            _this3.particleVectors_.push(particle.x1 * _this3.resolution);
-            _this3.particleVectors_.push(particle.y1 * _this3.resolution);
+            _this3.particleVectors_.push(particle.x1);
+            _this3.particleVectors_.push(particle.y1);
             rgba.forEach(function (v) {
               _this3.particleVectors_.push(v);
             });
-            _this3.particleVectors_.push(particle.x2 * _this3.resolution);
-            _this3.particleVectors_.push(particle.y2 * _this3.resolution);
+            _this3.particleVectors_.push(particle.x2);
+            _this3.particleVectors_.push(particle.y2);
             rgba.forEach(function (v) {
               _this3.particleVectors_.push(v);
             });
@@ -762,12 +756,12 @@ var Renderer = exports.Renderer = function () {
       var frame = function frame() {
         if (!_this4.stopped_) {
           counter += 1;
-          if (counter >= 1000) {
+          if (counter >= 10000) {
             counter = 0;
             _this4.clear_();
           }
           _this4.currentFrame_ = (0, _functions.getAnimationFrame)(frame);
-          _this4.evolve_(buckets, particles);
+          _this4.evolve_(buckets, particles, counter === 1);
           _this4.draw_(buckets, bounds);
         }
       };
@@ -943,7 +937,26 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 /**
- * Math utilities.
+ * Modified math utilities from Earth.nullschool's original implementation.
+ *
+ * @license
+ * The MIT License (MIT)
+ * Copyright (c) 2014 Cameron Beccario
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
 
 var τ = 2 * Math.PI;

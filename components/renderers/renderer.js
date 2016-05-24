@@ -348,11 +348,16 @@ export class Renderer {
   /**
    * Moves the wind particles.
    */
-  evolve_(buckets, particles) {
+  evolve_(buckets, particles, firstRender) {
     this.particleVectors_.length = 0;
     buckets.forEach(bucket => { bucket.length = 0; });
 
     particles.forEach(particle => {
+      if (!firstRender) {
+        particle.x1 = particle.x2;
+        particle.y1 = particle.y2;
+      }
+
       if (particle.age > MAX_PARTICLE_AGE) {
         this.field_.randomize(particle).age = 0;
       }
@@ -378,11 +383,11 @@ export class Renderer {
 
           buckets[colorIndex].push(particle);
 
-          this.particleVectors_.push(particle.x1 * this.resolution);
-          this.particleVectors_.push(particle.y1 * this.resolution);
+          this.particleVectors_.push(particle.x1);
+          this.particleVectors_.push(particle.y1);
           rgba.forEach(v => { this.particleVectors_.push(v); });
-          this.particleVectors_.push(particle.x2 * this.resolution);
-          this.particleVectors_.push(particle.y2 * this.resolution);
+          this.particleVectors_.push(particle.x2);
+          this.particleVectors_.push(particle.y2);
           rgba.forEach(v => { this.particleVectors_.push(v); });
         } else {
           // Particle isn't visible, but it still moves through the field.
@@ -433,12 +438,12 @@ export class Renderer {
     const frame = () => {
       if (!this.stopped_) {
         counter += 1;
-        if (counter >= 1000) {
+        if (counter >= 10000) {
           counter = 0;
           this.clear_();
         }
         this.currentFrame_ = getAnimationFrame(frame);
-        this.evolve_(buckets, particles);
+        this.evolve_(buckets, particles, counter === 1);
         this.draw_(buckets, bounds);
       }
     };

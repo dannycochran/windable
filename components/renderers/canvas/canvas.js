@@ -23,8 +23,6 @@ export class CanvasRenderer extends Renderer {
         bucket.forEach((particle) => {
           this.context.moveTo(particle.x1, particle.y1);
           this.context.lineTo(particle.x2, particle.y2);
-          particle.x1 = particle.x2;
-          particle.y1 = particle.y2;
         });
 
         this.context.stroke();

@@ -1,6 +1,26 @@
 /**
- * Math utilities.
+ * Modified math utilities from Earth.nullschool's original implementation.
+ *
+ * @license
+ * The MIT License (MIT)
+ * Copyright (c) 2014 Cameron Beccario
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  */
+
 
 const τ = 2 * Math.PI;
 const H = Math.pow(10, -5.2);
@@ -122,6 +142,7 @@ const project = function(lat, lon, extent) {
   return [x, (ymax - y) * yFactor];
 };
 
+
 const invert = function(x, y, extent) {
   const mapLonDelta = extent.east - extent.west;
   const worldMapRadius = extent.width / math.rad2deg(mapLonDelta) * 360/(2 * Math.PI);
@@ -133,6 +154,7 @@ const invert = function(x, y, extent) {
   const lon = math.rad2deg(extent.west) + x / extent.width * math.rad2deg(mapLonDelta);
   return [lon, lat];
 };
+
 
 export const math = {
   deg2rad: deg2rad,

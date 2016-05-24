@@ -124,7 +124,7 @@
           ]
         });
         // Initialize the wind map.
-        window.windMap = new WindMap({
+        const windMap = new WindMap({
           canvas: new CanvasLayer({map: map}).canvas,
           extent: () => {
             return {
@@ -211,7 +211,6 @@
         element.addEventListener('mousedown', function(e) {
           const x = e.pageX - this.offsetLeft;
           const y = e.pageY - this.offsetTop;
-          console.log(x, y);
           console.log(windMap.renderer.pointFromXY(x, y));
         });
         altitudeMenu.addEventListener('change', onSelectAltitude);
