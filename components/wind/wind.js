@@ -1,5 +1,5 @@
 /**
- * A light controller class for using a modified version of Esri's Windy.JS.
+ * A light controller class for using a modified version of Earth.nullschool.
  */
 
 import {CanvasRenderer} from './../renderers/canvas/canvas';
